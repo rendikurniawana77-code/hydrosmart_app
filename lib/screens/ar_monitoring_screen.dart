@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydrosmart_provider.dart';
 
@@ -10,114 +11,174 @@ class ARMonitoringScreen extends StatefulWidget {
 }
 
 class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
-  bool isMarkerTracked = true;
+  final MobileScannerController _cameraController = MobileScannerController();
+  bool isMarkerDetected = false;
+  String detectedMarkerId = 'Belum ada marker terpindai';
+
+  @override
+  void dispose() {
+    _cameraController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final sensor = Provider.of<HydroSmartProvider>(context).sensorData;
 
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: const Color(0xFF0F172A),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isMarkerTracked ? Icons.center_focus_strong : Icons.camera,
-                  size: 80,
-                  color: isMarkerTracked ? const Color(0xFF38BDF8) : Colors.white30,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isMarkerTracked
-                      ? 'Marker Tandon Terdeteksi [Unity AR]'
-                      : 'Arahkan Kamera ke Marker Tandon',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (isMarkerTracked)
-          Positioned(
-            top: 120,
-            left: 24,
-            right: 24,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF38BDF8), width: 2),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 10),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '🌿 HydroSmart AR Panel',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF059669)),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text('LIVE 3D', style: TextStyle(color: Colors.white, fontSize: 10)),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _arItem('TDS', '${sensor.tdsPpm.toStringAsFixed(0)} ppm'),
-                      _arItem('Air', '${sensor.waterLevelPct.toStringAsFixed(0)}%'),
-                      _arItem('Suhu', '${sensor.waterTempC.toStringAsFixed(1)}°C'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        Positioned(
-          bottom: 24,
-          left: 24,
-          right: 24,
-          child: ElevatedButton(
-            onPressed: () {
-              setState(() {
-                isMarkerTracked = !isMarkerTracked;
-              });
+    return Scaffold(
+      body: Stack(
+        children: [
+          // 1. Kamera Scanner (Mobile Scanner / Google ML Kit)
+          MobileScanner(
+            controller: _cameraController,
+            onDetect: (BarcodeCapture capture) {
+              final List<Barcode> barcodes = capture.barcodes;
+              for (final barcode in barcodes) {
+                final String? code = barcode.rawValue ?? barcode.displayValue;
+                if (code != null) {
+                  setState(() {
+                    isMarkerDetected = true;
+                    detectedMarkerId = code;
+                  });
+                  break;
+                }
+              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              padding: const EdgeInsets.all(14),
-            ),
-            child: Text(isMarkerTracked ? 'Simulasi Hilang Marker' : 'Simulasi Deteksi Marker'),
           ),
-        ),
-      ],
+
+          // 2. Bingkai Panduan Pemindai (Viewfinder Border)
+          Center(
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isMarkerDetected ? const Color(0xFF059669) : const Color(0xFF0284C7),
+                  width: 3,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+
+          // 3. Status Deteksi di Bagian Atas
+          Positioned(
+            top: 20,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isMarkerDetected ? Icons.check_circle : Icons.qr_code_scanner,
+                    color: isMarkerDetected ? const Color(0xFF059669) : const Color(0xFF38BDF8),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isMarkerDetected ? 'Marker Tandon Terdeteksi!' : 'Arahkan ke QR/Barcode Tandon',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          'ID: $detectedMarkerId',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 4. Floating HUD Panel Data Sensor (Muncul saat marker terdeteksi / Simulasi Aktif)
+          if (isMarkerDetected)
+            Positioned(
+              bottom: 30,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '🌿 HydroSmart AR Digital Twin',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669), fontSize: 14),
+                        ),
+                        Text('LIVE HUD', style: TextStyle(color: Color(0xFF0284C7), fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildArMetric('TDS', '${sensor.tdsPpm.toStringAsFixed(0)} ppm'),
+                        _buildArMetric('Level Air', '${sensor.waterLevelPct.toStringAsFixed(0)}%'),
+                        _buildArMetric('Suhu', '${sensor.waterTempC.toStringAsFixed(1)}°C'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // 5. Tombol Reset / Simulasi Toggle untuk Keperluan Testing
+          Positioned(
+            bottom: isMarkerDetected ? 140 : 30,
+            left: 20,
+            right: 20,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  isMarkerDetected = !isMarkerDetected;
+                  if (isMarkerDetected) {
+                    detectedMarkerId = 'HYDROS-DFT-01 (Simulasi)';
+                  }
+                });
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(isMarkerDetected ? 'Reset / Scan Ulang' : 'Simulasi Deteksi Marker'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0284C7),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _arItem(String title, String val) {
+  Widget _buildArMetric(String label, String value) {
     return Column(
       children: [
-        Text(title, style: const TextStyle(fontSize: 10, color: Colors.black54)),
-        Text(val, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
       ],
     );
   }
