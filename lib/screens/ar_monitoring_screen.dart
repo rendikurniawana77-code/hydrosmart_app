@@ -69,7 +69,7 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white24),
               ),
@@ -110,7 +110,7 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: const [
                     BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),

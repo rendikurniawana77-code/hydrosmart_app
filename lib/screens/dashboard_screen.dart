@@ -27,7 +27,7 @@ class DashboardScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0284C7).withOpacity(0.3),
+                  color: const Color(0xFF0284C7).withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -43,7 +43,7 @@ class DashboardScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.wifi, color: Colors.white, size: 20),
@@ -93,7 +93,7 @@ class DashboardScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text('Panen ± 7 Hari', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -133,7 +133,7 @@ class DashboardScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF0284C7).withOpacity(0.15)),
+                border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.15)),
               ),
               child: Row(
                 children: [
@@ -179,10 +179,10 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.06),
+            color: color.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -198,7 +198,7 @@ class DashboardScreen extends StatelessWidget {
               Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
                 child: Icon(icon, color: color, size: 18),
               ),
             ],
