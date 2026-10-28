@@ -14,7 +14,7 @@ dependencies:
   google_fonts: ^6.1.0
   http: ^1.2.0
   web_socket_channel: ^2.4.1
-  flutter_unity_widget: ^2022.2.0
+  mobile_scanner: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +23,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
 analyzer:
   exclude:
     - build/**
