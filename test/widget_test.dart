@@ -8,18 +8,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:hydrosmart_app/main.dart';
+
 void main() {
   testWidgets('app loads smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const HydrosmartApp() as Widget);
+    await tester.pumpWidget(const HydroSmartApp());
 
     // Verify the app renders without crashing.
     expect(find.byType(MaterialApp), findsOneWidget);
   });
-}
-
-class HydrosmartApp {
-  const new();
 }
 
 

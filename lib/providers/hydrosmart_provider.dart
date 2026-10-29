@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../firebase_options.dart';
 import '../models/sensor_data.dart';
 
 enum UserRole { penampil, operator, admin }
@@ -25,6 +28,7 @@ class HydroSmartProvider extends ChangeNotifier {
   UserRole _currentRole = UserRole.admin;
   late SensorData _sensorData;
   Timer? _simulationTimer;
+  StreamSubscription<DatabaseEvent>? _firebaseSubscription;
 
   double _minWaterLevel = 30.0;
   double _maxWaterLevel = 80.0;
@@ -44,15 +48,15 @@ class HydroSmartProvider extends ChangeNotifier {
 
   HydroSmartProvider() {
     _sensorData = SensorData(
-      tdsPpm: 680,
-      waterLevelPct: 75,
-      waterTempC: 27.5,
+      tdsPpm: 0,
+      waterLevelPct: 0,
+      waterTempC: 0.0,
       pumpStatus: 'OFF',
       mode: 'AUTO',
       isOnline: true,
       lastUpdated: DateTime.now(),
     );
-    _startTelemetrySimulation();
+    _initFirebaseListener();
   }
 
   void setRole(UserRole role) {
@@ -138,9 +142,90 @@ class HydroSmartProvider extends ChangeNotifier {
     });
   }
 
+  void _initFirebaseListener() {
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: DefaultFirebaseOptions.currentPlatform.databaseURL,
+      );
+
+      // 1. Mendengarkan data realtime di node 'hydrosmart/terbaru'
+      _firebaseSubscription = database
+          .ref('hydrosmart/terbaru')
+          .onValue
+          .listen((DatabaseEvent event) {
+        if (event.snapshot.exists && event.snapshot.value != null) {
+          final data = event.snapshot.value;
+          if (data is Map) {
+            final double level = (data['level'] as num?)?.toDouble() ?? _sensorData.waterLevelPct;
+            final bool pompa = data['pompa'] == true;
+            final double tds = (data['tds'] as num?)?.toDouble() ?? _sensorData.tdsPpm;
+            final double? suhu = (data['suhu'] as num?)?.toDouble();
+            final String? mode = data['mode']?.toString().toUpperCase();
+
+            DateTime updatedTime = DateTime.now();
+            if (data['waktu'] != null) {
+              final int timestamp = (data['waktu'] as num).toInt();
+              if (timestamp > 10000000000) {
+                updatedTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+              } else if (timestamp > 0) {
+                updatedTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+              }
+            }
+
+            _sensorData = SensorData(
+              tdsPpm: tds,
+              waterLevelPct: level,
+              waterTempC: suhu ?? _sensorData.waterTempC,
+              pumpStatus: pompa ? 'ON' : 'OFF',
+              mode: mode ?? _sensorData.mode,
+              isOnline: true,
+              lastUpdated: updatedTime,
+            );
+            notifyListeners();
+          }
+        }
+      }, onError: (error) {
+        debugPrint('Firebase Database Error (hydrosmart/terbaru): $error');
+      });
+
+      // 2. Mendengarkan riwayat untuk mendapatkan nilai suhu terbaru
+      database.ref('hydrosmart/riwayat').limitToLast(5).onValue.listen((event) {
+        if (event.snapshot.exists && event.snapshot.value is Map) {
+          final map = event.snapshot.value as Map;
+          for (final item in map.values.toList().reversed) {
+            if (item is Map && item['suhu'] != null) {
+              final double foundSuhu = (item['suhu'] as num).toDouble();
+              if (_sensorData.waterTempC != foundSuhu) {
+                _sensorData = SensorData(
+                  tdsPpm: _sensorData.tdsPpm,
+                  waterLevelPct: _sensorData.waterLevelPct,
+                  waterTempC: foundSuhu,
+                  pumpStatus: _sensorData.pumpStatus,
+                  mode: _sensorData.mode,
+                  isOnline: _sensorData.isOnline,
+                  lastUpdated: _sensorData.lastUpdated,
+                );
+                notifyListeners();
+              }
+              break;
+            }
+          }
+        }
+      }, onError: (error) {
+        debugPrint('Firebase Database Error (hydrosmart/riwayat): $error');
+      });
+    } catch (e) {
+      debugPrint('Error init Firebase listener: $e');
+      _startTelemetrySimulation();
+    }
+  }
+
   @override
   void dispose() {
+    _firebaseSubscription?.cancel();
     _simulationTimer?.cancel();
     super.dispose();
   }
 }
+

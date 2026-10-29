@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'providers/hydrosmart_provider.dart';
 import 'screens/dashboard_screen.dart';
@@ -7,7 +9,12 @@ import 'screens/ar_monitoring_screen.dart';
 import 'screens/plant_notes_screen.dart';
 import 'screens/settings_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => HydroSmartProvider(),
