@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroSmart v2.0 - Hydroponic Dashboard & AR Simulator</title>
+    <title>HydroSmart v2.0 - Dasbor Hidroponik Kangkung</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,8 +28,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Three.js for AR / 3D Visualizer -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -41,7 +39,6 @@
             min-height: 100vh;
         }
 
-        /* Glassmorphism card styling */
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -60,13 +57,6 @@
 
         .gradient-header {
             background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
         .gradient-btn {
@@ -97,7 +87,7 @@
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <!-- TOP NAV BAR -->
+    <!-- BAR NAVIGASI ATAS -->
     <header class="gradient-header text-white sticky top-0 z-50 shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -110,79 +100,83 @@
                         <span class="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
                             HydroSmart <span class="text-xs bg-sky-400/30 text-sky-100 border border-sky-300/40 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">v2.0</span>
                         </span>
-                        <p class="text-[10px] text-sky-100/80 -mt-1 hidden sm:block">Smart Hydroponics & AR Digital Twin</p>
+                        <p class="text-[10px] text-sky-100/80 -mt-1 hidden sm:block" data-i18n="subHeader">Hidroponik Pintar</p>
                     </div>
                 </div>
 
-                <!-- Navigation Tabs (Desktop) -->
+                <!-- Navigasi Tab (Desktop) -->
                 <nav class="hidden md:flex space-x-1 bg-black/10 p-1.5 rounded-xl border border-white/10">
                     <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-emerald-700 shadow-sm">
-                        <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
-                    </button>
-                    <button onclick="switchTab('ar-sim')" id="nav-ar-sim" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200">
-                        <i class="fa-solid fa-vr-cardboard mr-1.5"></i> AR Simulator
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i> <span data-i18n="navDashboard">Dasbor</span>
                     </button>
                     <button onclick="switchTab('journal')" id="nav-journal" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200">
-                        <i class="fa-solid fa-book-bookmark mr-1.5"></i> Plant Notes
+                        <i class="fa-solid fa-book-bookmark mr-1.5"></i> <span data-i18n="navJournal">Catatan Tanaman</span>
                     </button>
                     <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200">
-                        <i class="fa-solid fa-sliders mr-1.5"></i> Settings
+                        <i class="fa-solid fa-sliders mr-1.5"></i> <span data-i18n="navSettings">Pengaturan</span>
                     </button>
                 </nav>
 
-                <!-- User Role Controls -->
-                <div class="flex items-center space-x-3">
+                <!-- Kontrol Peran & Bahasa -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <!-- Switcher Bahasa -->
+                    <div class="bg-white/15 px-2.5 py-1 rounded-lg border border-white/20 text-xs flex items-center space-x-1.5">
+                        <i class="fa-solid fa-globe text-sky-200"></i>
+                        <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent text-white font-semibold outline-none cursor-pointer text-xs">
+                            <option value="id" class="text-slate-800" selected>ID</option>
+                            <option value="en" class="text-slate-800">EN</option>
+                        </select>
+                    </div>
+
+                    <!-- Switcher Peran -->
                     <div class="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-xs flex items-center space-x-2">
                         <i class="fa-solid fa-user-shield text-sky-200"></i>
-                        <span class="text-white/80 hidden sm:inline">Role:</span>
+                        <span class="text-white/80 hidden sm:inline" data-i18n="roleLabel">Peran:</span>
                         <select id="userRoleSelect" onchange="updateUserRole(this.value)" class="bg-transparent text-white font-semibold outline-none cursor-pointer">
                             <option value="operator" class="text-slate-800">Operator</option>
-                            <option value="agronomist" class="text-slate-800" selected>Agronomist</option>
+                            <option value="agronomist" class="text-slate-800" selected>Agronomis</option>
                             <option value="admin" class="text-slate-800">Admin</option>
                         </select>
                     </div>
 
-                    <!-- System Status Indicator -->
+                    <!-- Indikator IoT -->
                     <div class="hidden lg:flex items-center space-x-2 bg-emerald-500/30 px-2.5 py-1 rounded-full border border-emerald-300/40 text-xs text-white">
                         <span class="relative flex h-2 w-2">
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-300"></span>
                         </span>
-                        <span class="font-medium">IoT Connected</span>
+                        <span class="font-medium" data-i18n="iotStatus">IoT Terhubung</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Nav Bar -->
+        <!-- Navigasi Mobile -->
         <div class="md:hidden flex justify-around bg-emerald-900/40 border-t border-white/10 py-2 px-2 text-xs">
             <button onclick="switchTab('dashboard')" id="mobile-nav-dashboard" class="flex flex-col items-center text-white">
-                <i class="fa-solid fa-chart-pie text-base mb-0.5"></i> Dashboard
-            </button>
-            <button onclick="switchTab('ar-sim')" id="mobile-nav-ar-sim" class="flex flex-col items-center text-white/70">
-                <i class="fa-solid fa-vr-cardboard text-base mb-0.5"></i> AR Sim
+                <i class="fa-solid fa-chart-pie text-base mb-0.5"></i> <span data-i18n="navDashboard">Dasbor</span>
             </button>
             <button onclick="switchTab('journal')" id="mobile-nav-journal" class="flex flex-col items-center text-white/70">
-                <i class="fa-solid fa-book-bookmark text-base mb-0.5"></i> Journal
+                <i class="fa-solid fa-book-bookmark text-base mb-0.5"></i> <span data-i18n="navJournal">Jurnal</span>
             </button>
             <button onclick="switchTab('settings')" id="mobile-nav-settings" class="flex flex-col items-center text-white/70">
-                <i class="fa-solid fa-sliders text-base mb-0.5"></i> Settings
+                <i class="fa-solid fa-sliders text-base mb-0.5"></i> <span data-i18n="navSettings">Pengaturan</span>
             </button>
         </div>
     </header>
 
-    <!-- MAIN CONTAINER -->
+    <!-- KONTAINER UTAMA -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- ALERT NOTIFICATION BANNER -->
+        <!-- BANNER PERINGATAN -->
         <div id="alertBanner" class="hidden mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 shadow-sm flex items-center justify-between transition-all duration-300">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg flex-shrink-0">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
-                    <p class="font-bold text-sm text-amber-900" id="alertTitle">Parameter Warning</p>
-                    <p class="text-xs text-amber-700" id="alertDesc">pH levels are exceeding optimal threshold for Lettuce crop.</p>
+                    <p class="font-bold text-sm text-amber-900" id="alertTitle" data-i18n="alertTitle">Peringatan Parameter</p>
+                    <p class="text-xs text-amber-700" id="alertDesc" data-i18n="alertDesc">Tingkat pH melebihi batas optimal untuk tanaman Kangkung.</p>
                 </div>
             </div>
             <button onclick="dismissAlert()" class="text-amber-500 hover:text-amber-700 p-1.5 rounded-lg hover:bg-amber-100">
@@ -190,10 +184,10 @@
             </button>
         </div>
 
-        <!-- TAB 1: DASHBOARD -->
+        <!-- TAB 1: DASBOR -->
         <section id="tab-dashboard" class="tab-content space-y-6">
             
-            <!-- System Summary Header Card -->
+            <!-- Header Ringkasan Sistem -->
             <div class="glass-card rounded-2xl p-6 border border-sky-100 relative overflow-hidden">
                 <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none"></div>
                 <div class="absolute right-20 -top-10 w-48 h-48 bg-sky-200/30 rounded-full blur-2xl pointer-events-none"></div>
@@ -201,103 +195,82 @@
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 relative z-10">
                     <div>
                         <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-sky-600 mb-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> NFT Hydroponics Rack #1
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> <span data-i18n="rackLabel">Rak Hidroponik NFT #1</span>
                         </div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800">System Telemetry & Controls</h1>
-                        <p class="text-sm text-slate-500 mt-1">Real-time IoT metrics, auto-dosing status, and active crop target settings.</p>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800" data-i18n="dashTitle">Telemetri & Kontrol Sistem</h1>
+                        <p class="text-sm text-slate-500 mt-1" data-i18n="dashSub">Metrik IoT real-time, status otomatisasi dosis, dan target pertumbuhan tanaman.</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="bg-white/80 border border-slate-200/80 px-4 py-2 rounded-xl text-xs flex items-center space-x-3 shadow-sm">
                             <i class="fa-solid fa-seedling text-emerald-600 text-lg"></i>
                             <div>
-                                <span class="text-slate-400 block text-[10px]">CURRENT CROP</span>
-                                <span class="font-bold text-slate-700" id="currentCropLabel">Romaine Lettuce</span>
+                                <span class="text-slate-400 block text-[10px]" data-i18n="currentCropLabel">TANAMAN SAAT INI</span>
+                                <span class="font-bold text-slate-700" id="currentCropLabel">Kangkung</span>
                             </div>
                         </div>
 
                         <div class="bg-white/80 border border-slate-200/80 px-4 py-2 rounded-xl text-xs flex items-center space-x-3 shadow-sm">
                             <i class="fa-solid fa-clock text-sky-600 text-lg"></i>
                             <div>
-                                <span class="text-slate-400 block text-[10px]">GROWTH DAY</span>
-                                <span class="font-bold text-slate-700">Day 18 / 35</span>
+                                <span class="text-slate-400 block text-[10px]" data-i18n="growthDayLabel">HARI TANAM</span>
+                                <span class="font-bold text-slate-700" id="growthDayVal">Hari 14 / 25</span>
                             </div>
                         </div>
 
                         <button onclick="toggleSimulation()" id="simControlBtn" class="gradient-btn text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
-                            <i class="fa-solid fa-pause"></i> Pause Sim
+                            <i class="fa-solid fa-pause"></i> <span id="simBtnText" data-i18n="pauseSim">Jeda Simulasi</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- SENSOR METRICS CARDS GRID -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- METRIK SENSOR (3 Kartu Utama) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 
                 <!-- pH Level -->
                 <div class="glass-card glass-card-hover p-5 rounded-2xl relative border-t-4 border-t-emerald-500">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">pH Level</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="phTitle">Tingkat pH</span>
                         <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                             <i class="fa-solid fa-flask"></i>
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline justify-between">
-                        <span class="text-3xl font-extrabold text-slate-800" id="val-ph">6.2</span>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800" id="status-ph">Optimal</span>
+                        <span class="text-3xl font-extrabold text-slate-800" id="val-ph">6.3</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800" id="status-ph" data-i18n="statusOptimal">Optimal</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-2">Target: <span class="font-medium text-slate-600">5.8 - 6.5</span></p>
+                    <p class="text-xs text-slate-400 mt-2"><span data-i18n="targetLabel">Target</span>: <span class="font-medium text-slate-600" id="targetPhVal">6.0 - 7.0</span></p>
                     <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                        <div id="bar-ph" class="bg-emerald-500 h-1.5 rounded-full" style="width: 62%;"></div>
+                        <div id="bar-ph" class="bg-emerald-500 h-1.5 rounded-full" style="width: 63%;"></div>
                     </div>
                 </div>
 
-                <!-- EC (Nutrient Conc) -->
+                <!-- EC Level -->
                 <div class="glass-card glass-card-hover p-5 rounded-2xl relative border-t-4 border-t-sky-500">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">EC (Nutrients)</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="ecTitle">Kepekatan Nutrisi (EC)</span>
                         <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
                             <i class="fa-solid fa-bolt"></i>
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline justify-between">
                         <div class="flex items-baseline space-x-1">
-                            <span class="text-3xl font-extrabold text-slate-800" id="val-ec">1.8</span>
+                            <span class="text-3xl font-extrabold text-slate-800" id="val-ec">1.9</span>
                             <span class="text-xs text-slate-500">mS/cm</span>
                         </div>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800" id="status-ec">Optimal</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800" id="status-ec" data-i18n="statusOptimal">Optimal</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-2">Target: <span class="font-medium text-slate-600">1.4 - 2.2</span></p>
+                    <p class="text-xs text-slate-400 mt-2"><span data-i18n="targetLabel">Target</span>: <span class="font-medium text-slate-600" id="targetEcVal">1.4 - 2.4</span></p>
                     <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                        <div id="bar-ec" class="bg-sky-500 h-1.5 rounded-full" style="width: 60%;"></div>
+                        <div id="bar-ec" class="bg-sky-500 h-1.5 rounded-full" style="width: 63%;"></div>
                     </div>
                 </div>
 
-                <!-- Water Temp -->
-                <div class="glass-card glass-card-hover p-5 rounded-2xl relative border-t-4 border-t-teal-500">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Water Temp</span>
-                        <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
-                            <i class="fa-solid fa-temperature-half"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3 flex items-baseline justify-between">
-                        <div class="flex items-baseline space-x-1">
-                            <span class="text-3xl font-extrabold text-slate-800" id="val-temp">22.4</span>
-                            <span class="text-xs text-slate-500">°C</span>
-                        </div>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800" id="status-temp">Good</span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2">Target: <span class="font-medium text-slate-600">18 - 24 °C</span></p>
-                    <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                        <div id="bar-temp" class="bg-teal-500 h-1.5 rounded-full" style="width: 70%;"></div>
-                    </div>
-                </div>
-
-                <!-- Water Level -->
+                <!-- Level Air Penampungan -->
                 <div class="glass-card glass-card-hover p-5 rounded-2xl relative border-t-4 border-t-blue-500">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Res. Water Level</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="waterTitle">Level Air Penampungan</span>
                         <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                             <i class="fa-solid fa-water"></i>
                         </div>
@@ -307,9 +280,9 @@
                             <span class="text-3xl font-extrabold text-slate-800" id="val-water">84</span>
                             <span class="text-xs text-slate-500">%</span>
                         </div>
-                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800" id="status-water">High</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800" id="status-water" data-i18n="statusSafe">Aman</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-2">Capacity: <span class="font-medium text-slate-600">120 L / 150 L</span></p>
+                    <p class="text-xs text-slate-400 mt-2"><span data-i18n="capacityLabel">Kapasitas</span>: <span class="font-medium text-slate-600">120 L / 150 L</span></p>
                     <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
                         <div id="bar-water" class="bg-blue-500 h-1.5 rounded-full" style="width: 84%;"></div>
                     </div>
@@ -317,20 +290,19 @@
 
             </div>
 
-            <!-- ANALYTICS CHART & ACTUATOR CONTROL PANEL -->
+            <!-- GRAFIK & PANEL KONTROL AKTUATOR -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- Live Sensor Graph -->
+                <!-- Grafik Sensor Real-time -->
                 <div class="glass-card rounded-2xl p-6 lg:col-span-2 border border-slate-100">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="font-bold text-slate-800 text-base">Real-time Environmental Analytics</h3>
-                            <p class="text-xs text-slate-400">Live telemetry stream (updated every 2 sec)</p>
+                            <h3 class="font-bold text-slate-800 text-base" data-i18n="chartTitle">Analitik Lingkungan Waktu Nyata</h3>
+                            <p class="text-xs text-slate-400" data-i18n="chartSub">Stream data telemetri (diperbarui tiap 2 detik)</p>
                         </div>
                         <div class="flex items-center space-x-2 text-xs">
                             <button onclick="setChartMetric('ph')" id="chartBtnPh" class="px-3 py-1 rounded-lg bg-emerald-500 text-white font-semibold">pH</button>
                             <button onclick="setChartMetric('ec')" id="chartBtnEc" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold">EC</button>
-                            <button onclick="setChartMetric('temp')" id="chartBtnTemp" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold">Temp</button>
                         </div>
                     </div>
                     <div class="h-64 w-full">
@@ -338,25 +310,25 @@
                     </div>
                 </div>
 
-                <!-- Actuator Override Controls -->
+                <!-- Kontrol Manual Aktuator -->
                 <div class="glass-card rounded-2xl p-6 border border-slate-100 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-slate-800 text-base">Actuator Control Center</h3>
-                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase font-bold" id="roleBadge">Agronomist</span>
+                            <h3 class="font-bold text-slate-800 text-base" data-i18n="actuatorTitle">Pusat Kontrol Aktuator</h3>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full uppercase font-bold" id="roleBadge">Agronomis</span>
                         </div>
-                        <p class="text-xs text-slate-500 mb-4">Manual overrides require appropriate role permissions.</p>
+                        <p class="text-xs text-slate-500 mb-4" data-i18n="actuatorSub">Pengendalian manual memerlukan hak akses peran yang sesuai.</p>
 
                         <div class="space-y-3">
-                            <!-- Water Pump -->
+                            <!-- Pompa Sirkulasi -->
                             <div class="p-3 bg-white/70 rounded-xl border border-slate-200/70 flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
                                         <i class="fa-solid fa-pump-soap"></i>
                                     </div>
                                     <div>
-                                        <p class="text-xs font-bold text-slate-700">Nutrient Circulation Pump</p>
-                                        <p class="text-[10px] text-slate-400" id="pumpModeText">Mode: Auto Cycle</p>
+                                        <p class="text-xs font-bold text-slate-700" data-i18n="pumpTitle">Pompa Sirkulasi Nutrisi</p>
+                                        <p class="text-[10px] text-slate-400" id="pumpModeText" data-i18n="pumpModeAuto">Mode: Otomatis</p>
                                     </div>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -365,250 +337,112 @@
                                 </label>
                             </div>
 
-                            <!-- pH Adjuster Doser -->
+                            <!-- Doser Penurun pH -->
                             <div class="p-3 bg-white/70 rounded-xl border border-slate-200/70 flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
                                         <i class="fa-solid fa-syringe"></i>
                                     </div>
                                     <div>
-                                        <p class="text-xs font-bold text-slate-700">pH Down Doser Pump</p>
-                                        <p class="text-[10px] text-slate-400">Auto Dose Active</p>
+                                        <p class="text-xs font-bold text-slate-700" data-i18n="doserPhTitle">Pompa Dosing pH Down</p>
+                                        <p class="text-[10px] text-slate-400" data-i18n="autoDoseActive">Auto Dose Aktif</p>
                                     </div>
                                 </div>
-                                <button onclick="triggerDosing('ph')" class="role-restricted px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold text-xs rounded-lg transition-colors">
-                                    Pulse 5ml
+                                <button onclick="triggerDosing('ph')" class="role-restricted px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold text-xs rounded-lg transition-colors" data-i18n="inject5ml">
+                                    Injeksi 5ml
                                 </button>
                             </div>
 
-                            <!-- Nutrient A+B Doser -->
+                            <!-- Injektor Nutrisi A+B -->
                             <div class="p-3 bg-white/70 rounded-xl border border-slate-200/70 flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
                                         <i class="fa-solid fa-vial-circle-check"></i>
                                     </div>
                                     <div>
-                                        <p class="text-xs font-bold text-slate-700">Nutrient A+B Injector</p>
-                                        <p class="text-[10px] text-slate-400">Target EC: 1.8</p>
+                                        <p class="text-xs font-bold text-slate-700" data-i18n="doserEcTitle">Injektor Nutrisi A+B</p>
+                                        <p class="text-[10px] text-slate-400"><span data-i18n="targetEcLabel">Target EC</span>: 1.9</p>
                                     </div>
                                 </div>
-                                <button onclick="triggerDosing('ec')" class="role-restricted px-3 py-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold text-xs rounded-lg transition-colors">
-                                    Pulse 10ml
+                                <button onclick="triggerDosing('ec')" class="role-restricted px-3 py-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 font-bold text-xs rounded-lg transition-colors" data-i18n="inject10ml">
+                                    Injeksi 10ml
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-400">
-                        <span>Last Dosing Event:</span>
-                        <span class="font-medium text-slate-600" id="lastDoseTime">12 mins ago</span>
+                        <span data-i18n="lastDoseLabel">Pemberian Dosis Terakhir:</span>
+                        <span class="font-medium text-slate-600" id="lastDoseTime" data-i18n="time12m">12 menit lalu</span>
                     </div>
                 </div>
 
             </div>
         </section>
 
-        <!-- TAB 2: AR SIMULATOR -->
-        <section id="tab-ar-sim" class="tab-content hidden space-y-6">
-            
-            <div class="glass-card rounded-2xl p-6 border border-sky-100">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-sky-600 mb-1">
-                            <i class="fa-solid fa-camera-retro"></i> Interactive WebAR & Digital Twin
-                        </div>
-                        <h2 class="text-2xl font-extrabold text-slate-800">Mobile AR Marker Tracking Simulator</h2>
-                        <p class="text-sm text-slate-500">Scan virtual hydroponic rack markers, visualize overlay diagnostics & crop health models.</p>
-                    </div>
-
-                    <div class="flex items-center space-x-3">
-                        <button onclick="toggleARCamera()" id="arCamBtn" class="gradient-btn text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
-                            <i class="fa-solid fa-video"></i> <span id="arCamText">Start Camera Simulation</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- AR Viewport Canvas Area -->
-                <div class="lg:col-span-2 glass-card rounded-2xl p-4 border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden bg-slate-900 min-h-[420px]">
-                    
-                    <!-- Virtual Camera View / WebGL Canvas container -->
-                    <div id="arCanvasContainer" class="w-full h-full absolute inset-0 bg-slate-900 flex items-center justify-center">
-                        <canvas id="threeCanvas" class="w-full h-full"></canvas>
-                    </div>
-
-                    <!-- AR Overlay HUD -->
-                    <div id="arHud" class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between">
-                        <!-- Top HUD Bar -->
-                        <div class="flex items-center justify-between text-white text-xs">
-                            <div class="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center space-x-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <span class="font-bold tracking-wide">AR MARKER #04 DETECTED</span>
-                            </div>
-                            <div class="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20">
-                                <span>FPS: 60 | Tracking: HIGH</span>
-                            </div>
-                        </div>
-
-                        <!-- Target Box Visual Cue -->
-                        <div class="self-center w-64 h-64 border-2 border-dashed border-sky-400/60 rounded-3xl flex items-center justify-center relative">
-                            <div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-sky-400"></div>
-                            <div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-sky-400"></div>
-                            <div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-sky-400"></div>
-                            <div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-sky-400"></div>
-                            <p class="text-sky-200/70 text-[11px] font-medium tracking-wide">ALIGN RACK MARKER HERE</p>
-                        </div>
-
-                        <!-- Bottom Floating Info HUD -->
-                        <div class="bg-black/70 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-white max-w-md pointer-events-auto">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-bold text-emerald-400 text-sm flex items-center gap-2">
-                                    <i class="fa-solid fa-leaf"></i> Romaine Lettuce (Zone B)
-                                </span>
-                                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">Healthy (94%)</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                                <div class="bg-white/10 p-2 rounded-lg">
-                                    <span class="text-slate-300 text-[10px] block">pH</span>
-                                    <span class="font-bold text-white" id="ar-ph">6.2</span>
-                                </div>
-                                <div class="bg-white/10 p-2 rounded-lg">
-                                    <span class="text-slate-300 text-[10px] block">EC</span>
-                                    <span class="font-bold text-white" id="ar-ec">1.8</span>
-                                </div>
-                                <div class="bg-white/10 p-2 rounded-lg">
-                                    <span class="text-slate-300 text-[10px] block">Temp</span>
-                                    <span class="font-bold text-white" id="ar-temp">22.4°C</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- AR Controls Panel -->
-                <div class="glass-card rounded-2xl p-6 border border-slate-200 flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-base mb-1">AR Digital Twin Controls</h3>
-                        <p class="text-xs text-slate-500 mb-4">Simulate marker detection, 3D plant growth stages, and layer toggles.</p>
-
-                        <div class="space-y-4">
-                            <!-- Select Growth Stage -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Simulated Plant Growth Stage</label>
-                                <select id="arStageSelect" onchange="updateARPlantStage(this.value)" class="w-full bg-white border border-slate-300 text-xs rounded-xl p-2.5 font-medium outline-none focus:ring-2 focus:ring-emerald-500">
-                                    <option value="seedling">Stage 1: Seedling / Sprout</option>
-                                    <option value="vegetative" selected>Stage 2: Vegetative Growth (Current)</option>
-                                    <option value="mature">Stage 3: Ready for Harvest</option>
-                                </select>
-                            </div>
-
-                            <!-- Overlay Toggle Switches -->
-                            <div class="space-y-2">
-                                <label class="block text-xs font-bold text-slate-700">AR Diagnostic Overlays</label>
-                                
-                                <label class="flex items-center justify-between p-2.5 bg-white/70 rounded-xl border border-slate-200 text-xs cursor-pointer">
-                                    <span class="text-slate-700 font-medium"><i class="fa-solid fa-droplet text-sky-500 mr-2"></i> Hydro Flow Vectors</span>
-                                    <input type="checkbox" id="toggleARFlow" checked onchange="toggleAROverlay('flow')" class="accent-emerald-600 rounded">
-                                </label>
-
-                                <label class="flex items-center justify-between p-2.5 bg-white/70 rounded-xl border border-slate-200 text-xs cursor-pointer">
-                                    <span class="text-slate-700 font-medium"><i class="fa-solid fa-bug-slash text-amber-500 mr-2"></i> Pest/Pestilence Risk Heatmap</span>
-                                    <input type="checkbox" id="toggleARHeatmap" onchange="toggleAROverlay('heatmap')" class="accent-emerald-600 rounded">
-                                </label>
-
-                                <label class="flex items-center justify-between p-2.5 bg-white/70 rounded-xl border border-slate-200 text-xs cursor-pointer">
-                                    <span class="text-slate-700 font-medium"><i class="fa-solid fa-ruler-vertical text-emerald-500 mr-2"></i> Plant Height Measurement Gauge</span>
-                                    <input type="checkbox" id="toggleARGauge" checked onchange="toggleAROverlay('gauge')" class="accent-emerald-600 rounded">
-                                </label>
-                            </div>
-
-                            <!-- Marker Selector -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Virtual Marker Target</label>
-                                <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                                    <button onclick="setARMarker(1)" id="markerBtn1" class="p-2 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold">Rack #1</button>
-                                    <button onclick="setARMarker(2)" id="markerBtn2" class="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium">Rack #2</button>
-                                    <button onclick="setARMarker(3)" id="markerBtn3" class="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium">Sump Tank</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 pt-4 border-t border-slate-200 text-xs text-slate-500">
-                        <i class="fa-solid fa-circle-info text-sky-500 mr-1"></i>
-                        <span>Drag with mouse inside camera box to orbit camera around 3D hydroponic model.</span>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- TAB 3: PLANT NOTES JOURNAL -->
+        <!-- TAB 2: CATATAN TANAMAN -->
         <section id="tab-journal" class="tab-content hidden space-y-6">
             
             <div class="glass-card rounded-2xl p-6 border border-sky-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">
-                        <i class="fa-solid fa-book-leaf"></i> Agronomist Digital Logbook
+                        <i class="fa-solid fa-book-leaf"></i> <span data-i18n="journalTag">Jurnal Digital Pertanian</span>
                     </div>
-                    <h2 class="text-2xl font-extrabold text-slate-800">Crop Growth Notes & Visual Journal</h2>
-                    <p class="text-sm text-slate-500">Track plant observation logs, photo attachments, and health progression notes.</p>
+                    <h2 class="text-2xl font-extrabold text-slate-800" data-i18n="journalTitle">Catatan Perkembangan Tanaman</h2>
+                    <p class="text-sm text-slate-500" data-i18n="journalSub">Pantau catatan inspeksi, kondisi kesehatan, dan riwayat tindakan tanaman Kangkung.</p>
                 </div>
 
                 <button onclick="openNoteModal()" class="gradient-btn text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm">
-                    <i class="fa-solid fa-plus"></i> Add New Inspection Note
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="addNoteBtn">Tambah Catatan Inspeksi</span>
                 </button>
             </div>
 
-            <!-- NOTES LIST / GRID -->
+            <!-- DAFTAR CATATAN -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="notesGrid">
                 
-                <!-- Note Item 1 -->
+                <!-- Catatan 1 Kangkung -->
                 <div class="glass-card glass-card-hover rounded-2xl p-5 border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">Growth Stage: Veg II</span>
-                            <span class="text-[11px] text-slate-400">Oct 24, 2026</span>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800" data-i18n="noteStageVeg">Fase: Vegetatif (Hari 14)</span>
+                            <span class="text-[11px] text-slate-400">31 Okt 2026</span>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-base mb-2">Leaf Canopy Expansion Inspection</h3>
-                        <p class="text-xs text-slate-600 leading-relaxed mb-4">
-                            Leaf color is rich emerald green with minimal tip-burn observed. Root system is healthy, fibrous, and white. Nutrient EC elevated to 1.8 mS/cm.
+                        <h3 class="font-bold text-slate-800 text-base mb-2" data-i18n="note1Title">Inspeksi Batang & Daun Kangkung</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="note1Desc">
+                            Batang kangkung tumbuh kokoh, daun hijau lebat tanpa bercak hama. Penyerapan larutan nutrisi sangat optimal pada EC 1.9 mS/cm.
                         </p>
                     </div>
                     <div>
                         <div class="flex items-center space-x-2 mb-3">
-                            <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Lettuce</span>
-                            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-medium">#NFT-Rack1</span>
+                            <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Kangkung</span>
+                            <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-medium">#Rak-NFT1</span>
                         </div>
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                            <span>Logged by: <strong class="text-slate-600">Dr. Aris (Agronomist)</strong></span>
+                            <span><span data-i18n="byLabel">Oleh</span>: <strong class="text-slate-600">Dr. Aris (Agronomis)</strong></span>
                             <button onclick="deleteNote(this)" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Note Item 2 -->
+                <!-- Catatan 2 -->
                 <div class="glass-card glass-card-hover rounded-2xl p-5 border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800">Routine Maintenance</span>
-                            <span class="text-[11px] text-slate-400">Oct 20, 2026</span>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800" data-i18n="noteStageMaint">Pemeliharaan Rutin</span>
+                            <span class="text-[11px] text-slate-400">25 Okt 2026</span>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-base mb-2">pH Probe Recalibration & Reservoir Flush</h3>
-                        <p class="text-xs text-slate-600 leading-relaxed mb-4">
-                            Re-calibrated pH sensor using standard 4.0 and 7.0 buffer solutions. System refilled with 120L fresh RO water and standard A+B nutrient mixture.
+                        <h3 class="font-bold text-slate-800 text-base mb-2" data-i18n="note2Title">Kalibrasi Sensor pH & Pengurasan Tanki</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="note2Desc">
+                            Sensor pH telah dikalibrasi ulang. Tanki sirkulasi diisi ulang dengan air baku baru dan penambahan larutan stok Nutrisi A+B.
                         </p>
                     </div>
                     <div>
                         <div class="flex items-center space-x-2 mb-3">
-                            <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">#Maintenance</span>
-                            <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Calibration</span>
+                            <span class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">#Pemeliharaan</span>
+                            <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Kalibrasi</span>
                         </div>
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                            <span>Logged by: <strong class="text-slate-600">Budi (Operator)</strong></span>
+                            <span><span data-i18n="byLabel">Oleh</span>: <strong class="text-slate-600">Budi (Operator)</strong></span>
                             <button onclick="deleteNote(this)" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
@@ -617,96 +451,102 @@
             </div>
         </section>
 
-        <!-- TAB 4: SETTINGS -->
+        <!-- TAB 3: PENGATURAN -->
         <section id="tab-settings" class="tab-content hidden space-y-6">
             
             <div class="glass-card rounded-2xl p-6 border border-sky-100">
                 <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-sky-600 mb-1">
-                    <i class="fa-solid fa-sliders"></i> Configuration Center
+                    <i class="fa-solid fa-sliders"></i> <span data-i18n="configTag">Pusat Konfigurasi</span>
                 </div>
-                <h2 class="text-2xl font-extrabold text-slate-800">System Thresholds & Crop Presets</h2>
-                <p class="text-sm text-slate-500">Configure optimal sensor ranges, alert notifications, and crop profiles.</p>
+                <h2 class="text-2xl font-extrabold text-slate-800" data-i18n="settingsTitle">Batas Ambang Sistem & Preset Tanaman</h2>
+                <p class="text-sm text-slate-500" data-i18n="settingsSub">Atur parameter ideal sensor, batasan peringatan, dan jenis tanaman yang dibudidayakan.</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- Crop Profile Selection -->
+                <!-- Resep Preset Tanaman (KANGKUNG DIUTAMAKAN) -->
                 <div class="glass-card rounded-2xl p-6 border border-slate-200">
-                    <h3 class="font-bold text-slate-800 text-base mb-1">Crop Recipe Presets</h3>
-                    <p class="text-xs text-slate-500 mb-4">Selecting a crop automatically updates target pH and EC limits.</p>
+                    <h3 class="font-bold text-slate-800 text-base mb-1" data-i18n="presetTitle">Preset Rekomendasi Tanaman</h3>
+                    <p class="text-xs text-slate-500 mb-4" data-i18n="presetSub">Memilih jenis tanaman akan memperbarui batas target pH dan EC secara otomatis.</p>
 
                     <div class="space-y-3">
-                        <button onclick="applyCropPreset('lettuce')" id="presetLettuce" class="w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 flex items-center justify-between">
+                        <!-- PRESET UTAMA: KANGKUNG -->
+                        <button onclick="applyCropPreset('kangkung')" id="presetKangkung" class="w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-center justify-between shadow-sm">
                             <div>
-                                <h4 class="font-bold text-xs text-slate-800">Romaine / Butterhead Lettuce</h4>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="font-bold text-xs text-slate-800" data-i18n="kangkungName">Kangkung (Water Spinach)</h4>
+                                    <span class="text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-bold uppercase" data-i18n="primaryBadge">Utama</span>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mt-0.5">pH: 6.0-7.0 | EC: 1.4-2.4 mS/cm</p>
+                            </div>
+                            <i id="iconKangkung" class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                        </button>
+
+                        <!-- PRESET SELADA -->
+                        <button onclick="applyCropPreset('lettuce')" id="presetLettuce" class="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:bg-slate-50">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800" data-i18n="lettuceName">Selada Romaine</h4>
                                 <p class="text-[11px] text-slate-500">pH: 5.8-6.5 | EC: 1.4-2.2 mS/cm</p>
                             </div>
-                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                            <i id="iconLettuce" class="fa-regular fa-circle text-slate-300 text-lg"></i>
                         </button>
 
+                        <!-- PRESET BAYAM -->
                         <button onclick="applyCropPreset('spinach')" id="presetSpinach" class="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:bg-slate-50">
                             <div>
-                                <h4 class="font-bold text-xs text-slate-800">English Spinach</h4>
+                                <h4 class="font-bold text-xs text-slate-800" data-i18n="spinachName">Bayam Hijau</h4>
                                 <p class="text-[11px] text-slate-500">pH: 6.0-7.0 | EC: 1.8-2.3 mS/cm</p>
                             </div>
-                            <i class="fa-regular fa-circle text-slate-300 text-lg"></i>
-                        </button>
-
-                        <button onclick="applyCropPreset('basil')" id="presetBasil" class="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:bg-slate-50">
-                            <div>
-                                <h4 class="font-bold text-xs text-slate-800">Sweet Basil</h4>
-                                <p class="text-[11px] text-slate-500">pH: 5.5-6.5 | EC: 1.0-1.6 mS/cm</p>
-                            </div>
-                            <i class="fa-regular fa-circle text-slate-300 text-lg"></i>
+                            <i id="iconSpinach" class="fa-regular fa-circle text-slate-300 text-lg"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Custom Threshold Sliders -->
+                <!-- Slider Ambang Batas -->
                 <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-200">
-                    <h3 class="font-bold text-slate-800 text-base mb-1">Custom Alert Threshold Limits</h3>
-                    <p class="text-xs text-slate-500 mb-6">Triggers warning notifications if telemetry strays beyond min/max limits.</p>
+                    <h3 class="font-bold text-slate-800 text-base mb-1" data-i18n="thresholdTitle">Pengaturan Batas Ambang Peringatan</h3>
+                    <p class="text-xs text-slate-500 mb-6" data-i18n="thresholdSub">Peringatan otomatis akan aktif jika nilai sensor berada di luar batas min/maks ini.</p>
 
                     <div class="space-y-6">
-                        <!-- pH Sliders -->
+                        <!-- Slider pH -->
                         <div>
                             <div class="flex justify-between items-center text-xs font-bold text-slate-700 mb-2">
-                                <span>pH Target Range: <span id="lblPhRange" class="text-emerald-600 font-extrabold">5.8 - 6.5</span></span>
-                                <span class="text-slate-400 font-normal">Min: 4.0 / Max: 8.5</span>
+                                <span><span data-i18n="targetPhRange">Kisaran Target pH</span>: <span id="lblPhRange" class="text-emerald-600 font-extrabold">6.0 - 7.0</span></span>
+                                <span class="text-slate-400 font-normal">Min: 4.0 / Maks: 8.5</span>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Min pH Threshold</label>
-                                    <input type="range" id="inputPhMin" min="4.0" max="6.5" step="0.1" value="5.8" oninput="updateSettingsUI()" class="w-full accent-emerald-600 cursor-pointer">
+                                    <label class="text-[10px] text-slate-400 block mb-1" data-i18n="minPhLabel">Batas Minimal pH</label>
+                                    <input type="range" id="inputPhMin" min="4.0" max="6.5" step="0.1" value="6.0" oninput="updateSettingsUI()" class="w-full accent-emerald-600 cursor-pointer">
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Max pH Threshold</label>
-                                    <input type="range" id="inputPhMax" min="6.0" max="8.5" step="0.1" value="6.5" oninput="updateSettingsUI()" class="w-full accent-emerald-600 cursor-pointer">
+                                    <label class="text-[10px] text-slate-400 block mb-1" data-i18n="maxPhLabel">Batas Maksimal pH</label>
+                                    <input type="range" id="inputPhMax" min="6.0" max="8.5" step="0.1" value="7.0" oninput="updateSettingsUI()" class="w-full accent-emerald-600 cursor-pointer">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- EC Sliders -->
+                        <!-- Slider EC -->
                         <div>
                             <div class="flex justify-between items-center text-xs font-bold text-slate-700 mb-2">
-                                <span>EC Nutrient Range: <span id="lblEcRange" class="text-sky-600 font-extrabold">1.4 - 2.2 mS/cm</span></span>
-                                <span class="text-slate-400 font-normal">Min: 0.5 / Max: 3.5</span>
+                                <span><span data-i18n="targetEcRange">Kisaran Target Nutrisi EC</span>: <span id="lblEcRange" class="text-sky-600 font-extrabold">1.4 - 2.4 mS/cm</span></span>
+                                <span class="text-slate-400 font-normal">Min: 0.5 / Maks: 3.5</span>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Min EC Threshold</label>
+                                    <label class="text-[10px] text-slate-400 block mb-1" data-i18n="minEcLabel">Batas Minimal EC</label>
                                     <input type="range" id="inputEcMin" min="0.5" max="2.0" step="0.1" value="1.4" oninput="updateSettingsUI()" class="w-full accent-sky-600 cursor-pointer">
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1">Max EC Threshold</label>
-                                    <input type="range" id="inputEcMax" min="1.8" max="3.5" step="0.1" value="2.2" oninput="updateSettingsUI()" class="w-full accent-sky-600 cursor-pointer">
+                                    <label class="text-[10px] text-slate-400 block mb-1" data-i18n="maxEcLabel">Batas Maksimal EC</label>
+                                    <input type="range" id="inputEcMax" min="1.8" max="3.5" step="0.1" value="2.4" oninput="updateSettingsUI()" class="w-full accent-sky-600 cursor-pointer">
                                 </div>
                             </div>
                         </div>
 
                         <div class="pt-4 border-t border-slate-200 flex justify-end">
                             <button onclick="saveSettings()" class="gradient-btn text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-md">
-                                <i class="fa-solid fa-floppy-disk mr-2"></i> Save Threshold Settings
+                                <i class="fa-solid fa-floppy-disk mr-2"></i> <span data-i18n="saveBtn">Simpan Pengaturan</span>
                             </button>
                         </div>
                     </div>
@@ -720,103 +560,271 @@
     <!-- FOOTER -->
     <footer class="mt-auto bg-white/60 backdrop-blur-md border-t border-slate-200/80 py-4 text-center text-xs text-slate-500">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>© 2026 HydroSmart Systems. White, Emerald Green & Sky Blue Theme.</p>
+            <p>© 2026 Sistem HydroSmart. <span data-i18n="footerText">Tema Hijau Zamrud & Biru Langit.</span></p>
             <div class="flex items-center space-x-4">
-                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-wifi mr-1"></i> Gateway v2.1 Online</span>
+                <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-wifi mr-1"></i> <span data-i18n="gatewayOnline">Gateway Online</span></span>
                 <span class="text-slate-300">|</span>
-                <a href="#" class="hover:text-sky-600">Documentation</a>
+                <a href="#" class="hover:text-sky-600" data-i18n="documentation">Dokumentasi</a>
             </div>
         </div>
     </footer>
 
-    <!-- ADD NOTE MODAL -->
+    <!-- MODAL TAMBAH CATATAN -->
     <div id="noteModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-extrabold text-slate-800 text-lg">Add Observation Note</h3>
+                <h3 class="font-extrabold text-slate-800 text-lg" data-i18n="modalTitle">Tambah Catatan Observasi</h3>
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
             <form onsubmit="saveNote(event)" class="space-y-4 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Title</label>
-                    <input type="text" id="noteTitleInput" required placeholder="e.g. Root tip inspection" class="w-full p-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
+                    <label class="block font-bold text-slate-700 mb-1" data-i18n="modalTitleInput">Judul Inspeksi</label>
+                    <input type="text" id="noteTitleInput" required placeholder="Contoh: Inspeksi daun kangkung" class="w-full p-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Growth Stage</label>
+                    <label class="block font-bold text-slate-700 mb-1" data-i18n="modalStageInput">Fase Pertumbuhan</label>
                     <select id="noteStageInput" class="w-full p-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="Seedling">Seedling</option>
-                        <option value="Vegetative" selected>Vegetative</option>
-                        <option value="Harvest Ready">Harvest Ready</option>
+                        <option value="Semaian" data-i18n="optSeedling">Semaian / Sprout</option>
+                        <option value="Vegetatif" selected data-i18n="optVegetative">Vegetatif</option>
+                        <option value="Siap Panen" data-i18n="optHarvest">Siap Panen</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Note Content</label>
-                    <textarea id="noteContentInput" rows="3" required placeholder="Describe crop health, pest issues, or nutrient changes..." class="w-full p-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    <label class="block font-bold text-slate-700 mb-1" data-i18n="modalContentInput">Isi Catatan</label>
+                    <textarea id="noteContentInput" rows="3" required placeholder="Jelaskan kondisi fisik tanaman, hama, atau perubahan nutrisi..." class="w-full p-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
                 </div>
 
                 <div class="flex items-center justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeNoteModal()" class="px-4 py-2 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold">Cancel</button>
-                    <button type="submit" class="gradient-btn text-white px-5 py-2 rounded-xl font-bold">Save Note</button>
+                    <button type="button" onclick="closeNoteModal()" class="px-4 py-2 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold" data-i18n="cancelBtn">Batal</button>
+                    <button type="submit" class="gradient-btn text-white px-5 py-2 rounded-xl font-bold" data-i18n="saveNoteBtn">Simpan Catatan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- SCRIPT LOGIC -->
+    <!-- SCRIPT LOGIKA JAVASCRIPT & I18N -->
     <script>
-        // Global App State
-        const state = {
-            simulating: true,
-            userRole: 'agronomist',
-            chartMetric: 'ph',
-            currentCrop: 'Lettuce',
-            sensors: {
-                ph: 6.2,
-                ec: 1.8,
-                temp: 22.4,
-                water: 84
+        // KAMUS BAHASA (MULTILANGUAGE EN / ID)
+        const translations = {
+            id: {
+                subHeader: "Hidroponik Pintar",
+                navDashboard: "Dasbor",
+                navJournal: "Catatan Tanaman",
+                navSettings: "Pengaturan",
+                roleLabel: "Peran:",
+                iotStatus: "IoT Terhubung",
+                alertTitle: "Peringatan Parameter",
+                alertDesc: "Tingkat pH atau EC melebihi batas optimal untuk tanaman Kangkung.",
+                rackLabel: "Rak Hidroponik NFT #1",
+                dashTitle: "Telemetri & Kontrol Sistem",
+                dashSub: "Metrik IoT real-time, status otomatisasi dosis, dan target pertumbuhan tanaman.",
+                currentCropLabel: "TANAMAN SAAT INI",
+                growthDayLabel: "HARI TANAM",
+                pauseSim: "Jeda Simulasi",
+                resumeSim: "Lanjutkan Simulasi",
+                phTitle: "Tingkat pH",
+                ecTitle: "Kepekatan Nutrisi (EC)",
+                waterTitle: "Level Air Penampungan",
+                statusOptimal: "Optimal",
+                statusSafe: "Aman",
+                targetLabel: "Target",
+                capacityLabel: "Kapasitas",
+                chartTitle: "Analitik Lingkungan Waktu Nyata",
+                chartSub: "Stream data telemetri (diperbarui tiap 2 detik)",
+                actuatorTitle: "Pusat Kontrol Aktuator",
+                actuatorSub: "Pengendalian manual memerlukan hak akses peran yang sesuai.",
+                pumpTitle: "Pompa Sirkulasi Nutrisi",
+                pumpModeAuto: "Mode: Otomatis",
+                pumpModeOff: "Mode: Manual OFF",
+                doserPhTitle: "Pompa Dosing pH Down",
+                autoDoseActive: "Auto Dose Aktif",
+                inject5ml: "Injeksi 5ml",
+                doserEcTitle: "Injektor Nutrisi A+B",
+                targetEcLabel: "Target EC",
+                inject10ml: "Injeksi 10ml",
+                lastDoseLabel: "Pemberian Dosis Terakhir:",
+                time12m: "12 menit lalu",
+                journalTag: "Jurnal Digital Pertanian",
+                journalTitle: "Catatan Perkembangan Tanaman",
+                journalSub: "Pantau catatan inspeksi, kondisi kesehatan, dan riwayat tindakan tanaman Kangkung.",
+                addNoteBtn: "Tambah Catatan Inspeksi",
+                noteStageVeg: "Fase: Vegetatif (Hari 14)",
+                note1Title: "Inspeksi Batang & Daun Kangkung",
+                note1Desc: "Batang kangkung tumbuh kokoh, daun hijau lebat tanpa bercak hama. Penyerapan larutan nutrisi sangat optimal pada EC 1.9 mS/cm.",
+                noteStageMaint: "Pemeliharaan Rutin",
+                note2Title: "Kalibrasi Sensor pH & Pengurasan Tanki",
+                note2Desc: "Sensor pH telah dikalibrasi ulang. Tanki sirkulasi diisi ulang dengan air baku baru dan penambahan larutan stok Nutrisi A+B.",
+                byLabel: "Oleh",
+                configTag: "Pusat Konfigurasi",
+                settingsTitle: "Batas Ambang Sistem & Preset Tanaman",
+                settingsSub: "Atur parameter ideal sensor, batasan peringatan, dan jenis tanaman yang dibudidayakan.",
+                presetTitle: "Preset Rekomendasi Tanaman",
+                presetSub: "Memilih jenis tanaman akan memperbarui batas target pH dan EC secara otomatis.",
+                kangkungName: "Kangkung (Water Spinach)",
+                primaryBadge: "Utama",
+                lettuceName: "Selada Romaine",
+                spinachName: "Bayam Hijau",
+                thresholdTitle: "Pengaturan Batas Ambang Peringatan",
+                thresholdSub: "Peringatan otomatis akan aktif jika nilai sensor berada di luar batas min/maks ini.",
+                targetPhRange: "Kisaran Target pH",
+                minPhLabel: "Batas Minimal pH",
+                maxPhLabel: "Batas Maksimal pH",
+                targetEcRange: "Kisaran Target Nutrisi EC",
+                minEcLabel: "Batas Minimal EC",
+                maxEcLabel: "Batas Maksimal EC",
+                saveBtn: "Simpan Pengaturan",
+                footerText: "Tema Hijau Zamrud & Biru Langit.",
+                gatewayOnline: "Gateway Online",
+                documentation: "Dokumentasi",
+                modalTitle: "Tambah Catatan Observasi",
+                modalTitleInput: "Judul Inspeksi",
+                modalStageInput: "Fase Pertumbuhan",
+                optSeedling: "Semaian / Sprout",
+                optVegetative: "Vegetatif",
+                optHarvest: "Siap Panen",
+                modalContentInput: "Isi Catatan",
+                cancelBtn: "Batal",
+                saveNoteBtn: "Simpan Catatan"
             },
-            thresholds: {
-                phMin: 5.8,
-                phMax: 6.5,
-                ecMin: 1.4,
-                ecMax: 2.2
-            },
-            ar: {
-                cameraActive: true,
-                plantStage: 'vegetative',
-                overlays: {
-                    flow: true,
-                    heatmap: false,
-                    gauge: true
-                }
+            en: {
+                subHeader: "Smart Hydroponics",
+                navDashboard: "Dashboard",
+                navJournal: "Plant Notes",
+                navSettings: "Settings",
+                roleLabel: "Role:",
+                iotStatus: "IoT Connected",
+                alertTitle: "Parameter Warning",
+                alertDesc: "pH or EC level exceeds optimal threshold for Water Spinach crop.",
+                rackLabel: "NFT Hydroponic Rack #1",
+                dashTitle: "System Telemetry & Controls",
+                dashSub: "Real-time IoT metrics, auto-dosing status, and active crop target settings.",
+                currentCropLabel: "CURRENT CROP",
+                growthDayLabel: "GROWTH DAY",
+                pauseSim: "Pause Simulation",
+                resumeSim: "Resume Simulation",
+                phTitle: "pH Level",
+                ecTitle: "Nutrient EC Level",
+                waterTitle: "Res. Water Level",
+                statusOptimal: "Optimal",
+                statusSafe: "Safe",
+                targetLabel: "Target",
+                capacityLabel: "Capacity",
+                chartTitle: "Real-time Environmental Analytics",
+                chartSub: "Live telemetry stream (updated every 2 sec)",
+                actuatorTitle: "Actuator Control Center",
+                actuatorSub: "Manual overrides require appropriate role permissions.",
+                pumpTitle: "Nutrient Circulation Pump",
+                pumpModeAuto: "Mode: Auto Cycle",
+                pumpModeOff: "Mode: Manual OFF",
+                doserPhTitle: "pH Down Doser Pump",
+                autoDoseActive: "Auto Dose Active",
+                inject5ml: "Pulse 5ml",
+                doserEcTitle: "Nutrient A+B Injector",
+                targetEcLabel: "Target EC",
+                inject10ml: "Pulse 10ml",
+                lastDoseLabel: "Last Dosing Event:",
+                time12m: "12 mins ago",
+                journalTag: "Agronomist Digital Logbook",
+                journalTitle: "Crop Growth Notes & Visual Journal",
+                journalSub: "Track Water Spinach plant observation logs, health progression, and actions.",
+                addNoteBtn: "Add Inspection Note",
+                noteStageVeg: "Stage: Vegetative (Day 14)",
+                note1Title: "Water Spinach Stem & Leaf Inspection",
+                note1Desc: "Stems are firm, leaves are lush green with no pest spots. Nutrient absorption optimal at EC 1.9 mS/cm.",
+                noteStageMaint: "Routine Maintenance",
+                note2Title: "pH Sensor Recalibration & Reservoir Flush",
+                note2Desc: "pH sensor recalibrated. Reservoir refilled with fresh water and standard A+B nutrient mixture.",
+                byLabel: "By",
+                configTag: "Configuration Center",
+                settingsTitle: "System Thresholds & Crop Presets",
+                settingsSub: "Configure optimal sensor ranges, alert notifications, and crop profiles.",
+                presetTitle: "Crop Recipe Presets",
+                presetSub: "Selecting a crop automatically updates target pH and EC limits.",
+                kangkungName: "Water Spinach (Kangkung)",
+                primaryBadge: "Primary",
+                lettuceName: "Romaine Lettuce",
+                spinachName: "Green Spinach",
+                thresholdTitle: "Custom Alert Threshold Limits",
+                thresholdSub: "Triggers warning notifications if telemetry strays beyond min/max limits.",
+                targetPhRange: "pH Target Range",
+                minPhLabel: "Min pH Threshold",
+                maxPhLabel: "Max pH Threshold",
+                targetEcRange: "EC Nutrient Range",
+                minEcLabel: "Min EC Threshold",
+                maxEcLabel: "Max EC Threshold",
+                saveBtn: "Save Settings",
+                footerText: "Emerald Green & Sky Blue Theme.",
+                gatewayOnline: "Gateway Online",
+                documentation: "Documentation",
+                modalTitle: "Add Observation Note",
+                modalTitleInput: "Inspection Title",
+                modalStageInput: "Growth Stage",
+                optSeedling: "Seedling / Sprout",
+                optVegetative: "Vegetative",
+                optHarvest: "Ready for Harvest",
+                modalContentInput: "Note Content",
+                cancelBtn: "Cancel",
+                saveNoteBtn: "Save Note"
             }
         };
 
-        // Chart Instance
+        // State Utama Aplikasi (Kangkung secara default)
+        const state = {
+            lang: 'id',
+            simulating: true,
+            userRole: 'agronomist',
+            chartMetric: 'ph',
+            currentCrop: 'Kangkung',
+            sensors: {
+                ph: 6.3,
+                ec: 1.9,
+                water: 84
+            },
+            thresholds: {
+                phMin: 6.0,
+                phMax: 7.0,
+                ecMin: 1.4,
+                ecMax: 2.4
+            }
+        };
+
         let telemetryChart = null;
         const chartDataPoints = {
             labels: [],
             ph: [],
-            ec: [],
-            temp: []
+            ec: []
         };
 
-        // Three.js AR Scene Variables
-        let arScene, arCamera, arRenderer, arPlantMesh;
-
-        // Initialize App on DOM Loaded
+        // Inisialisasi
         window.addEventListener('DOMContentLoaded', () => {
             initChart();
-            initThreeAR();
             startTelemetrySimulation();
             updateRoleUI();
         });
 
-        // Tab Switching
+        // Ganti Bahasa
+        function changeLanguage(lang) {
+            state.lang = lang;
+            const t = translations[lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.innerText = t[key];
+                }
+            });
+
+            // Update teks dinamis
+            const simBtn = document.getElementById('simBtnText');
+            if(simBtn) {
+                simBtn.innerText = state.simulating ? t.pauseSim : t.resumeSim;
+            }
+        }
+
+        // Alih Tab
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
@@ -831,7 +839,7 @@
             }
         }
 
-        // Role Management
+        // Peran Pengguna
         function updateUserRole(role) {
             state.userRole = role;
             document.getElementById('roleBadge').innerText = role.toUpperCase();
@@ -849,20 +857,16 @@
             });
         }
 
-        // Real-Time IoT Sensor Telemetry Simulation
+        // Simulasi Sensor IoT Real-time
         function startTelemetrySimulation() {
             setInterval(() => {
                 if (!state.simulating) return;
 
-                // Fluctuate sensor values smoothly
                 state.sensors.ph += (Math.random() - 0.5) * 0.08;
                 state.sensors.ph = Math.max(5.0, Math.min(7.5, state.sensors.ph));
 
                 state.sensors.ec += (Math.random() - 0.5) * 0.04;
                 state.sensors.ec = Math.max(1.0, Math.min(2.8, state.sensors.ec));
-
-                state.sensors.temp += (Math.random() - 0.5) * 0.1;
-                state.sensors.temp = Math.max(18.0, Math.min(28.0, state.sensors.temp));
 
                 updateTelemetryUI();
                 pushChartData();
@@ -874,31 +878,24 @@
         function updateTelemetryUI() {
             document.getElementById('val-ph').innerText = state.sensors.ph.toFixed(1);
             document.getElementById('val-ec').innerText = state.sensors.ec.toFixed(1);
-            document.getElementById('val-temp').innerText = state.sensors.temp.toFixed(1);
 
-            // Update AR HUD values
-            document.getElementById('ar-ph').innerText = state.sensors.ph.toFixed(1);
-            document.getElementById('ar-ec').innerText = state.sensors.ec.toFixed(1);
-            document.getElementById('ar-temp').innerText = state.sensors.temp.toFixed(1) + '°C';
-
-            // Progress bar percentages
             document.getElementById('bar-ph').style.width = `${(state.sensors.ph / 10) * 100}%`;
             document.getElementById('bar-ec').style.width = `${(state.sensors.ec / 3.0) * 100}%`;
-            document.getElementById('bar-temp').style.width = `${(state.sensors.temp / 35) * 100}%`;
         }
 
         function checkAlerts() {
             const banner = document.getElementById('alertBanner');
             const title = document.getElementById('alertTitle');
             const desc = document.getElementById('alertDesc');
+            const t = translations[state.lang];
 
             if (state.sensors.ph < state.thresholds.phMin || state.sensors.ph > state.thresholds.phMax) {
-                title.innerText = 'pH Threshold Warning';
-                desc.innerText = `Current pH (${state.sensors.ph.toFixed(1)}) is outside target range (${state.thresholds.phMin} - ${state.thresholds.phMax}). Auto-doser ready.`;
+                title.innerText = t.alertTitle;
+                desc.innerText = `${t.phTitle} (${state.sensors.ph.toFixed(1)}) ${t.alertDesc}`;
                 banner.classList.remove('hidden');
             } else if (state.sensors.ec < state.thresholds.ecMin || state.sensors.ec > state.thresholds.ecMax) {
-                title.innerText = 'Nutrient EC Warning';
-                desc.innerText = `Current EC (${state.sensors.ec.toFixed(1)} mS/cm) is outside recommended thresholds.`;
+                title.innerText = t.alertTitle;
+                desc.innerText = `${t.ecTitle} (${state.sensors.ec.toFixed(1)} mS/cm) ${t.alertDesc}`;
                 banner.classList.remove('hidden');
             } else {
                 banner.classList.add('hidden');
@@ -911,29 +908,35 @@
 
         function toggleSimulation() {
             state.simulating = !state.simulating;
-            const btn = document.getElementById('simControlBtn');
+            const btnText = document.getElementById('simBtnText');
+            const t = translations[state.lang];
+
             if (state.simulating) {
-                btn.innerHTML = `<i class="fa-solid fa-pause"></i> Pause Sim`;
+                btnText.innerText = t.pauseSim;
+                document.getElementById('simControlBtn').querySelector('i').className = "fa-solid fa-pause";
             } else {
-                btn.innerHTML = `<i class="fa-solid fa-play"></i> Resume Sim`;
+                btnText.innerText = t.resumeSim;
+                document.getElementById('simControlBtn').querySelector('i').className = "fa-solid fa-play";
             }
         }
 
         function triggerDosing(type) {
+            const t = translations[state.lang];
             if (type === 'ph') {
                 state.sensors.ph -= 0.2;
-                alertMessage(`Dosed 5ml pH Down. Adjusted pH to ~${state.sensors.ph.toFixed(1)}`);
+                alertMessage(`${t.doserPhTitle}: pH -> ~${state.sensors.ph.toFixed(1)}`);
             } else if (type === 'ec') {
                 state.sensors.ec += 0.2;
-                alertMessage(`Dosed 10ml Nutrient Solution. Adjusted EC to ~${state.sensors.ec.toFixed(1)}`);
+                alertMessage(`${t.doserEcTitle}: EC -> ~${state.sensors.ec.toFixed(1)}`);
             }
-            document.getElementById('lastDoseTime').innerText = 'Just now';
+            document.getElementById('lastDoseTime').innerText = state.lang === 'id' ? 'Baru saja' : 'Just now';
             updateTelemetryUI();
         }
 
         function toggleActuator(type) {
             const isChecked = document.getElementById('togglePump').checked;
-            document.getElementById('pumpModeText').innerText = isChecked ? 'Mode: Auto Cycle' : 'Mode: Manual OFF';
+            const t = translations[state.lang];
+            document.getElementById('pumpModeText').innerText = isChecked ? t.pumpModeAuto : t.pumpModeOff;
         }
 
         function alertMessage(msg) {
@@ -944,7 +947,7 @@
             setTimeout(() => alertBox.remove(), 3500);
         }
 
-        // Chart.js Telemetry Setup
+        // Setup Chart.js
         function initChart() {
             const ctx = document.getElementById('telemetryChart').getContext('2d');
             
@@ -952,9 +955,8 @@
             for(let i=10; i>=0; i--) {
                 const t = new Date(now.getTime() - i*2000);
                 chartDataPoints.labels.push(t.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}));
-                chartDataPoints.ph.push(6.2 + (Math.random()-0.5)*0.1);
-                chartDataPoints.ec.push(1.8 + (Math.random()-0.5)*0.05);
-                chartDataPoints.temp.push(22.4 + (Math.random()-0.5)*0.2);
+                chartDataPoints.ph.push(6.3 + (Math.random()-0.5)*0.1);
+                chartDataPoints.ec.push(1.9 + (Math.random()-0.5)*0.05);
             }
 
             telemetryChart = new Chart(ctx, {
@@ -990,13 +992,11 @@
             chartDataPoints.labels.push(tStr);
             chartDataPoints.ph.push(state.sensors.ph);
             chartDataPoints.ec.push(state.sensors.ec);
-            chartDataPoints.temp.push(state.sensors.temp);
 
             if (chartDataPoints.labels.length > 15) {
                 chartDataPoints.labels.shift();
                 chartDataPoints.ph.shift();
                 chartDataPoints.ec.shift();
-                chartDataPoints.temp.shift();
             }
 
             updateChartDataset();
@@ -1006,7 +1006,6 @@
             state.chartMetric = metric;
             document.getElementById('chartBtnPh').className = metric==='ph'?'px-3 py-1 rounded-lg bg-emerald-500 text-white font-semibold':'px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-semibold';
             document.getElementById('chartBtnEc').className = metric==='ec'?'px-3 py-1 rounded-lg bg-sky-500 text-white font-semibold':'px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-semibold';
-            document.getElementById('chartBtnTemp').className = metric==='temp'?'px-3 py-1 rounded-lg bg-teal-500 text-white font-semibold':'px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-semibold';
             
             updateChartDataset();
         }
@@ -1016,7 +1015,6 @@
             const m = state.chartMetric;
             let color = '#059669';
             if (m === 'ec') color = '#0284c7';
-            if (m === 'temp') color = '#0d9488';
 
             telemetryChart.data.datasets[0].label = m.toUpperCase();
             telemetryChart.data.datasets[0].data = chartDataPoints[m];
@@ -1024,117 +1022,7 @@
             telemetryChart.update();
         }
 
-        // Three.js AR 3D Viewport Simulator
-        function initThreeAR() {
-            const container = document.getElementById('arCanvasContainer');
-            const width = container.clientWidth || 600;
-            const height = container.clientHeight || 420;
-
-            arScene = new THREE.Scene();
-            arScene.background = new THREE.Color(0x0f172a);
-
-            arCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-            arCamera.position.set(0, 2.5, 5);
-            arCamera.lookAt(0, 0, 0);
-
-            arRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('threeCanvas'), antialias: true });
-            arRenderer.setSize(width, height);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            arScene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0x38bdf8, 1);
-            dirLight.position.set(5, 10, 7);
-            arScene.add(dirLight);
-
-            const pipeGeo = new THREE.CylinderGeometry(0.3, 0.3, 4, 32);
-            const pipeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
-            const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-            pipe.rotation.z = Math.PI / 2;
-            arScene.add(pipe);
-
-            const plantGroup = new THREE.Group();
-            for(let i=0; i<5; i++) {
-                const leafGeo = new THREE.DodecahedronGeometry(0.25 + Math.random()*0.1, 1);
-                const leafMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
-                const leaf = new THREE.Mesh(leafGeo, leafMat);
-                leaf.position.set((i-2)*0.8, 0.3, 0);
-                plantGroup.add(leaf);
-            }
-            arPlantMesh = plantGroup;
-            arScene.add(arPlantMesh);
-
-            let isDragging = false;
-            let previousMousePosition = { x: 0, y: 0 };
-            
-            const canvasEl = document.getElementById('threeCanvas');
-            canvasEl.addEventListener('mousedown', (e) => isDragging = true);
-            canvasEl.addEventListener('mouseup', () => isDragging = false);
-            canvasEl.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
-                arPlantMesh.rotation.y += deltaMove.x * 0.01;
-                previousMousePosition = { x: e.offsetX, y: e.offsetY };
-            });
-
-            function animateAR() {
-                requestAnimationFrame(animateAR);
-                arPlantMesh.rotation.y += 0.003;
-                arRenderer.render(arScene, arCamera);
-            }
-            animateAR();
-
-            window.addEventListener('resize', () => {
-                if(!container) return;
-                const w = container.clientWidth;
-                const h = container.clientHeight;
-                arCamera.aspect = w / h;
-                arCamera.updateProjectionMatrix();
-                arRenderer.setSize(w, h);
-            });
-        }
-
-        function toggleARCamera() {
-            state.ar.cameraActive = !state.ar.cameraActive;
-            const hud = document.getElementById('arHud');
-            const btnText = document.getElementById('arCamText');
-            
-            if(state.ar.cameraActive) {
-                hud.style.display = 'flex';
-                btnText.innerText = 'Pause Camera Simulation';
-            } else {
-                hud.style.display = 'none';
-                btnText.innerText = 'Start Camera Simulation';
-            }
-        }
-
-        function updateARPlantStage(stage) {
-            state.ar.plantStage = stage;
-            let scale = 1;
-            if (stage === 'seedling') scale = 0.5;
-            if (stage === 'mature') scale = 1.4;
-
-            arPlantMesh.scale.set(scale, scale, scale);
-        }
-
-        function toggleAROverlay(overlayType) {
-            state.ar.overlays[overlayType] = document.getElementById(`toggleAR${overlayType.charAt(0).toUpperCase() + overlayType.slice(1)}`).checked;
-            alertMessage(`AR Layer '${overlayType}' updated.`);
-        }
-
-        function setARMarker(num) {
-            [1,2,3].forEach(n => {
-                const btn = document.getElementById(`markerBtn${n}`);
-                if(n === num) {
-                    btn.className = "p-2 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold";
-                } else {
-                    btn.className = "p-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium";
-                }
-            });
-            alertMessage(`Switched AR Marker to Target #${num}`);
-        }
-
-        // Journal & Notes Functions
+        // Catatan Jurnal
         function openNoteModal() {
             document.getElementById('noteModal').classList.remove('hidden');
         }
@@ -1155,54 +1043,84 @@
             newCard.innerHTML = `
                 <div>
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">Growth Stage: ${stage}</span>
-                        <span class="text-[11px] text-slate-400">Just now</span>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">${stage}</span>
+                        <span class="text-[11px] text-slate-400">${state.lang === 'id' ? 'Baru saja' : 'Just now'}</span>
                     </div>
                     <h3 class="font-bold text-slate-800 text-base mb-2">${title}</h3>
                     <p class="text-xs text-slate-600 leading-relaxed mb-4">${content}</p>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2 mb-3">
-                        <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Log</span>
+                        <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-medium">#Kangkung</span>
                     </div>
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                        <span>Logged by: <strong class="text-slate-600">Current User</strong></span>
+                        <span>${state.lang === 'id' ? 'Oleh' : 'By'}: <strong class="text-slate-600">User</strong></span>
                         <button onclick="deleteNote(this)" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;
             grid.prepend(newCard);
             closeNoteModal();
-            alertMessage("New growth observation note saved successfully.");
+            alertMessage(state.lang === 'id' ? "Catatan baru disimpan." : "New note saved.");
         }
 
         function deleteNote(btn) {
             btn.closest('.glass-card').remove();
-            alertMessage("Note removed.");
+            alertMessage(state.lang === 'id' ? "Catatan dihapus." : "Note deleted.");
         }
 
-        // Settings & Preset Management
+        // APPLIKASI PRESET CROP (Kangkung Utama)
         function applyCropPreset(crop) {
-            let cropName = "Romaine Lettuce";
-            if (crop === 'lettuce') {
+            let cropName = "Kangkung";
+            
+            // Reset Style Tombol Preset
+            ['Kangkung', 'Lettuce', 'Spinach'].forEach(c => {
+                const btn = document.getElementById(`preset${c}`);
+                const icon = document.getElementById(`icon${c}`);
+                btn.className = "w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:bg-slate-50";
+                icon.className = "fa-regular fa-circle text-slate-300 text-lg";
+            });
+
+            if (crop === 'kangkung') {
+                state.thresholds = { phMin: 6.0, phMax: 7.0, ecMin: 1.4, ecMax: 2.4 };
+                cropName = "Kangkung";
+                document.getElementById('growthDayVal').innerText = "Hari 14 / 25";
+                
+                const btn = document.getElementById('presetKangkung');
+                const icon = document.getElementById('iconKangkung');
+                btn.className = "w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-center justify-between shadow-sm";
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
+            } else if (crop === 'lettuce') {
                 state.thresholds = { phMin: 5.8, phMax: 6.5, ecMin: 1.4, ecMax: 2.2 };
-                cropName = "Romaine Lettuce";
+                cropName = state.lang === 'id' ? "Selada Romaine" : "Romaine Lettuce";
+                document.getElementById('growthDayVal').innerText = "Hari 18 / 35";
+
+                const btn = document.getElementById('presetLettuce');
+                const icon = document.getElementById('iconLettuce');
+                btn.className = "w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-center justify-between shadow-sm";
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
             } else if (crop === 'spinach') {
                 state.thresholds = { phMin: 6.0, phMax: 7.0, ecMin: 1.8, ecMax: 2.3 };
-                cropName = "English Spinach";
-            } else if (crop === 'basil') {
-                state.thresholds = { phMin: 5.5, phMax: 6.5, ecMin: 1.0, ecMax: 1.6 };
-                cropName = "Sweet Basil";
+                cropName = state.lang === 'id' ? "Bayam Hijau" : "Green Spinach";
+                document.getElementById('growthDayVal').innerText = "Hari 12 / 30";
+
+                const btn = document.getElementById('presetSpinach');
+                const icon = document.getElementById('iconSpinach');
+                btn.className = "w-full text-left p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-center justify-between shadow-sm";
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
             }
 
             document.getElementById('currentCropLabel').innerText = cropName;
+            document.getElementById('targetPhVal').innerText = `${state.thresholds.phMin.toFixed(1)} - ${state.thresholds.phMax.toFixed(1)}`;
+            document.getElementById('targetEcVal').innerText = `${state.thresholds.ecMin.toFixed(1)} - ${state.thresholds.ecMax.toFixed(1)}`;
+            
             document.getElementById('inputPhMin').value = state.thresholds.phMin;
             document.getElementById('inputPhMax').value = state.thresholds.phMax;
             document.getElementById('inputEcMin').value = state.thresholds.ecMin;
             document.getElementById('inputEcMax').value = state.thresholds.ecMax;
 
             updateSettingsUI();
-            alertMessage(`Applied ${cropName} threshold recipe!`);
+            alertMessage(state.lang === 'id' ? `Preset ${cropName} diterapkan!` : `Applied ${cropName} recipe!`);
         }
 
         function updateSettingsUI() {
@@ -1221,7 +1139,10 @@
             state.thresholds.ecMin = parseFloat(document.getElementById('inputEcMin').value);
             state.thresholds.ecMax = parseFloat(document.getElementById('inputEcMax').value);
 
-            alertMessage("System thresholds updated successfully!");
+            document.getElementById('targetPhVal').innerText = `${state.thresholds.phMin.toFixed(1)} - ${state.thresholds.phMax.toFixed(1)}`;
+            document.getElementById('targetEcVal').innerText = `${state.thresholds.ecMin.toFixed(1)} - ${state.thresholds.ecMax.toFixed(1)}`;
+
+            alertMessage(state.lang === 'id' ? "Pengaturan berhasil disimpan!" : "Settings saved successfully!");
         }
     </script>
 </body>
