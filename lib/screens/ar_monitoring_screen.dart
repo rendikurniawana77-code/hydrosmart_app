@@ -136,7 +136,6 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
                       children: [
                         _buildArMetric('TDS', '${sensor.tdsPpm.toStringAsFixed(0)} ppm'),
                         _buildArMetric('Level Air', '${sensor.waterLevelPct.toStringAsFixed(0)}%'),
-                        _buildArMetric('Suhu', '${sensor.waterTempC.toStringAsFixed(1)}°C'),
                       ],
                     ),
                   ],

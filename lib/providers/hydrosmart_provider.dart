@@ -30,7 +30,6 @@ class HydroSmartProvider extends ChangeNotifier {
   Timer? _simulationTimer;
   StreamSubscription<DatabaseEvent>? _firebaseSubscription;
   StreamSubscription<DatabaseEvent>? _kontrolSubscription;
-  StreamSubscription<DatabaseEvent>? _riwayatSubscription;
 
   double _minWaterLevel = 30.0;
   double _maxWaterLevel = 80.0;
@@ -52,7 +51,6 @@ class HydroSmartProvider extends ChangeNotifier {
     _sensorData = SensorData(
       tdsPpm: 0,
       waterLevelPct: 0,
-      waterTempC: 0.0,
       pumpStatus: 'OFF',
       mode: 'AUTO',
       isOnline: true,
@@ -85,7 +83,6 @@ class HydroSmartProvider extends ChangeNotifier {
     _sensorData = SensorData(
       tdsPpm: _sensorData.tdsPpm,
       waterLevelPct: _sensorData.waterLevelPct,
-      waterTempC: _sensorData.waterTempC,
       pumpStatus: newMode == 'AUTO' ? 'OFF' : _sensorData.pumpStatus,
       mode: newMode,
       isOnline: _sensorData.isOnline,
@@ -118,7 +115,6 @@ class HydroSmartProvider extends ChangeNotifier {
     _sensorData = SensorData(
       tdsPpm: _sensorData.tdsPpm,
       waterLevelPct: _sensorData.waterLevelPct,
-      waterTempC: _sensorData.waterTempC,
       pumpStatus: newStatus,
       mode: _sensorData.mode,
       isOnline: _sensorData.isOnline,
@@ -151,7 +147,6 @@ class HydroSmartProvider extends ChangeNotifier {
           _sensorData = SensorData(
             tdsPpm: _sensorData.tdsPpm,
             waterLevelPct: newLevel,
-            waterTempC: _sensorData.waterTempC,
             pumpStatus: 'OFF',
             mode: _sensorData.mode,
             isOnline: _sensorData.isOnline,
@@ -165,7 +160,6 @@ class HydroSmartProvider extends ChangeNotifier {
       _sensorData = SensorData(
         tdsPpm: 660 + random.nextDouble() * 40,
         waterLevelPct: newLevel,
-        waterTempC: 26.8 + random.nextDouble() * 1.5,
         pumpStatus: _sensorData.pumpStatus,
         mode: _sensorData.mode,
         isOnline: true,
@@ -193,7 +187,6 @@ class HydroSmartProvider extends ChangeNotifier {
             final double level = (data['level'] as num?)?.toDouble() ?? _sensorData.waterLevelPct;
             final bool pompa = data['pompa'] == true;
             final double tds = (data['tds'] as num?)?.toDouble() ?? _sensorData.tdsPpm;
-            final double? suhu = (data['suhu'] as num?)?.toDouble();
             final String? mode = data['mode']?.toString().toUpperCase();
 
             DateTime updatedTime = DateTime.now();
@@ -209,7 +202,6 @@ class HydroSmartProvider extends ChangeNotifier {
             _sensorData = SensorData(
               tdsPpm: tds,
               waterLevelPct: level,
-              waterTempC: suhu ?? _sensorData.waterTempC,
               pumpStatus: pompa ? 'ON' : 'OFF',
               mode: mode ?? _sensorData.mode,
               isOnline: true,
@@ -222,34 +214,7 @@ class HydroSmartProvider extends ChangeNotifier {
         debugPrint('Firebase Database Error (hydrosmart/terbaru): $error');
       });
 
-      // 2. Mendengarkan riwayat untuk mendapatkan nilai suhu terbaru
-      _riwayatSubscription = database.ref('hydrosmart/riwayat').limitToLast(5).onValue.listen((event) {
-        if (event.snapshot.exists && event.snapshot.value is Map) {
-          final map = event.snapshot.value as Map;
-          for (final item in map.values.toList().reversed) {
-            if (item is Map && item['suhu'] != null) {
-              final double foundSuhu = (item['suhu'] as num).toDouble();
-              if (_sensorData.waterTempC != foundSuhu) {
-                _sensorData = SensorData(
-                  tdsPpm: _sensorData.tdsPpm,
-                  waterLevelPct: _sensorData.waterLevelPct,
-                  waterTempC: foundSuhu,
-                  pumpStatus: _sensorData.pumpStatus,
-                  mode: _sensorData.mode,
-                  isOnline: _sensorData.isOnline,
-                  lastUpdated: _sensorData.lastUpdated,
-                );
-                notifyListeners();
-              }
-              break;
-            }
-          }
-        }
-      }, onError: (error) {
-        debugPrint('Firebase Database Error (hydrosmart/riwayat): $error');
-      });
-
-      // 3. Mendengarkan node 'hydrosmart/kontrol' agar status kontrol di HP selalu sinkron
+      // 2. Mendengarkan node 'hydrosmart/kontrol' agar status kontrol di HP selalu sinkron
       _kontrolSubscription = database.ref('hydrosmart/kontrol').onValue.listen((event) {
         if (event.snapshot.exists && event.snapshot.value != null) {
           final data = event.snapshot.value;
@@ -261,7 +226,6 @@ class HydroSmartProvider extends ChangeNotifier {
               _sensorData = SensorData(
                 tdsPpm: _sensorData.tdsPpm,
                 waterLevelPct: _sensorData.waterLevelPct,
-                waterTempC: _sensorData.waterTempC,
                 pumpStatus: (kMode == 'MANUAL' && kPompa != null)
                     ? (kPompa ? 'ON' : 'OFF')
                     : _sensorData.pumpStatus,
@@ -286,7 +250,6 @@ class HydroSmartProvider extends ChangeNotifier {
   void dispose() {
     _firebaseSubscription?.cancel();
     _kontrolSubscription?.cancel();
-    _riwayatSubscription?.cancel();
     _simulationTimer?.cancel();
     super.dispose();
   }

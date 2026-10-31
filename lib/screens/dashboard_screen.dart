@@ -118,7 +118,6 @@ class DashboardScreen extends StatelessWidget {
             children: [
               _buildSensorCard('Nutrisi TDS', '${sensor.tdsPpm.toStringAsFixed(0)} ppm', Icons.bolt, const Color(0xFF0284C7), 'Target: 600 - 800 ppm'),
               _buildSensorCard('Level Air', '${sensor.waterLevelPct.toStringAsFixed(1)}%', Icons.water_drop, const Color(0xFF059669), 'Batas: ${provider.minWaterLevel.toInt()}% - ${provider.maxWaterLevel.toInt()}%'),
-              _buildSensorCard('Suhu Air', '${sensor.waterTempC.toStringAsFixed(1)} °C', Icons.thermostat, const Color(0xFF0EA5E9), 'Optimal: 24 - 28 °C'),
               _buildSensorCard('Status Pompa', sensor.pumpStatus, Icons.power, sensor.pumpStatus.contains('ON') ? const Color(0xFF059669) : Colors.grey, 'Relay ESP32'),
             ],
           ),

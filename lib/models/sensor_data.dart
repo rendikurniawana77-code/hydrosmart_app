@@ -1,7 +1,6 @@
 class SensorData {
   final double tdsPpm;
   final double waterLevelPct;
-  final double waterTempC;
   final String pumpStatus;
   final String mode;
   final bool isOnline;
@@ -10,7 +9,6 @@ class SensorData {
   SensorData({
     required this.tdsPpm,
     required this.waterLevelPct,
-    required this.waterTempC,
     required this.pumpStatus,
     required this.mode,
     required this.isOnline,
@@ -21,7 +19,6 @@ class SensorData {
     return SensorData(
       tdsPpm: (json['tds_ppm'] ?? 0).toDouble(),
       waterLevelPct: (json['water_level_pct'] ?? 0).toDouble(),
-      waterTempC: (json['water_temp_c'] ?? 0).toDouble(),
       pumpStatus: json['pump_status'] ?? 'OFF',
       mode: json['mode'] ?? 'AUTO',
       isOnline: json['is_online'] ?? true,
@@ -33,7 +30,6 @@ class SensorData {
     return {
       'tds_ppm': tdsPpm,
       'water_level_pct': waterLevelPct,
-      'water_temp_c': waterTempC,
       'pump_status': pumpStatus,
       'mode': mode,
       'is_online': isOnline,
