@@ -29,6 +29,8 @@ class HydroSmartProvider extends ChangeNotifier {
   late SensorData _sensorData;
   Timer? _simulationTimer;
   StreamSubscription<DatabaseEvent>? _firebaseSubscription;
+  StreamSubscription<DatabaseEvent>? _kontrolSubscription;
+  StreamSubscription<DatabaseEvent>? _riwayatSubscription;
 
   double _minWaterLevel = 30.0;
   double _maxWaterLevel = 80.0;
@@ -75,9 +77,11 @@ class HydroSmartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleMode() {
+  Future<void> toggleMode() async {
     if (_currentRole == UserRole.penampil) return;
     String newMode = _sensorData.mode == 'AUTO' ? 'MANUAL' : 'AUTO';
+
+    // Update UI responsif secara langsung
     _sensorData = SensorData(
       tdsPpm: _sensorData.tdsPpm,
       waterLevelPct: _sensorData.waterLevelPct,
@@ -88,13 +92,29 @@ class HydroSmartProvider extends ChangeNotifier {
       lastUpdated: DateTime.now(),
     );
     notifyListeners();
+
+    // Kirim perintah mode ke Firebase node 'hydrosmart/kontrol'
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: DefaultFirebaseOptions.currentPlatform.databaseURL,
+      );
+      await database.ref('hydrosmart/kontrol').update({
+        'mode': newMode.toLowerCase(),
+      });
+    } catch (e) {
+      debugPrint('Error update mode ke Firebase: $e');
+    }
   }
 
-  void togglePump() {
+  Future<void> togglePump() async {
     if (_currentRole == UserRole.penampil) return;
     if (_sensorData.mode == 'AUTO') return;
 
-    String newStatus = _sensorData.pumpStatus == 'OFF' ? 'ON' : 'OFF';
+    bool targetPompa = _sensorData.pumpStatus != 'ON';
+    String newStatus = targetPompa ? 'ON' : 'OFF';
+
+    // Update UI responsif secara langsung
     _sensorData = SensorData(
       tdsPpm: _sensorData.tdsPpm,
       waterLevelPct: _sensorData.waterLevelPct,
@@ -105,6 +125,19 @@ class HydroSmartProvider extends ChangeNotifier {
       lastUpdated: DateTime.now(),
     );
     notifyListeners();
+
+    // Kirim perintah pompa ke Firebase node 'hydrosmart/kontrol'
+    try {
+      final database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: DefaultFirebaseOptions.currentPlatform.databaseURL,
+      );
+      await database.ref('hydrosmart/kontrol').update({
+        'pompa': targetPompa,
+      });
+    } catch (e) {
+      debugPrint('Error update pompa ke Firebase: $e');
+    }
   }
 
   void _startTelemetrySimulation() {
@@ -190,7 +223,7 @@ class HydroSmartProvider extends ChangeNotifier {
       });
 
       // 2. Mendengarkan riwayat untuk mendapatkan nilai suhu terbaru
-      database.ref('hydrosmart/riwayat').limitToLast(5).onValue.listen((event) {
+      _riwayatSubscription = database.ref('hydrosmart/riwayat').limitToLast(5).onValue.listen((event) {
         if (event.snapshot.exists && event.snapshot.value is Map) {
           final map = event.snapshot.value as Map;
           for (final item in map.values.toList().reversed) {
@@ -215,6 +248,34 @@ class HydroSmartProvider extends ChangeNotifier {
       }, onError: (error) {
         debugPrint('Firebase Database Error (hydrosmart/riwayat): $error');
       });
+
+      // 3. Mendengarkan node 'hydrosmart/kontrol' agar status kontrol di HP selalu sinkron
+      _kontrolSubscription = database.ref('hydrosmart/kontrol').onValue.listen((event) {
+        if (event.snapshot.exists && event.snapshot.value != null) {
+          final data = event.snapshot.value;
+          if (data is Map) {
+            final String? kMode = data['mode']?.toString().toUpperCase();
+            final bool? kPompa = data['pompa'] == true;
+
+            if (kMode != null && kMode != _sensorData.mode) {
+              _sensorData = SensorData(
+                tdsPpm: _sensorData.tdsPpm,
+                waterLevelPct: _sensorData.waterLevelPct,
+                waterTempC: _sensorData.waterTempC,
+                pumpStatus: (kMode == 'MANUAL' && kPompa != null)
+                    ? (kPompa ? 'ON' : 'OFF')
+                    : _sensorData.pumpStatus,
+                mode: kMode,
+                isOnline: _sensorData.isOnline,
+                lastUpdated: _sensorData.lastUpdated,
+              );
+              notifyListeners();
+            }
+          }
+        }
+      }, onError: (error) {
+        debugPrint('Firebase Database Error (hydrosmart/kontrol): $error');
+      });
     } catch (e) {
       debugPrint('Error init Firebase listener: $e');
       _startTelemetrySimulation();
@@ -224,6 +285,8 @@ class HydroSmartProvider extends ChangeNotifier {
   @override
   void dispose() {
     _firebaseSubscription?.cancel();
+    _kontrolSubscription?.cancel();
+    _riwayatSubscription?.cancel();
     _simulationTimer?.cancel();
     super.dispose();
   }
