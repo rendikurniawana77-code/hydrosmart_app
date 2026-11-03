@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:provider/provider.dart';
-import '../providers/hydrosmart_provider.dart';
+import 'package:firebase_database/firebase_database.dart';
+
+// ====== SESUAIKAN BAGIAN INI DENGAN STRUKTUR FIREBASE ANDA ======
+const String kBasePath = 'tandon'; // node induk di Realtime Database
+const String kFieldTds = 'tds_ppm'; // nama field TDS
+const String kFieldLevel = 'water_level_pct'; // nama field level air
+const String kSimulationId = 'HYDROS-DFT-01'; // ID untuk tombol simulasi
+// ================================================================
 
 class ARMonitoringScreen extends StatefulWidget {
   const ARMonitoringScreen({super.key});
@@ -12,8 +18,12 @@ class ARMonitoringScreen extends StatefulWidget {
 
 class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
   final MobileScannerController _cameraController = MobileScannerController();
+
   bool isMarkerDetected = false;
   String detectedMarkerId = 'Belum ada marker terpindai';
+
+  String? _activeId;
+  Stream<DatabaseEvent>? _sensorStream;
 
   @override
   void dispose() {
@@ -21,32 +31,61 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
     super.dispose();
   }
 
+  // Aktifkan marker: simpan ID dan buka listener real time ke Firebase
+  void _setMarker(String code) {
+    setState(() {
+      _activeId = code;
+      isMarkerDetected = true;
+      detectedMarkerId = code;
+      _sensorStream = FirebaseDatabase.instance.ref('$kBasePath/$code').onValue;
+    });
+  }
+
+  void _resetMarker() {
+    setState(() {
+      _activeId = null;
+      isMarkerDetected = false;
+      detectedMarkerId = 'Belum ada marker terpindai';
+      _sensorStream = null;
+    });
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    for (final barcode in capture.barcodes) {
+      final code = (barcode.rawValue ?? barcode.displayValue)?.trim();
+      if (code == null || code.isEmpty) continue;
+
+      // Abaikan jika ID sama, supaya tidak rebuild berulang
+      if (code == _activeId) return;
+
+      // Path Firebase tidak boleh mengandung . # $ [ ] /
+      if (RegExp(r'[.#$\[\]/]').hasMatch(code)) {
+        setState(() {
+          _activeId = null;
+          _sensorStream = null;
+          isMarkerDetected = false;
+          detectedMarkerId = 'QR tidak valid: $code';
+        });
+        return;
+      }
+
+      _setMarker(code);
+      return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final sensor = Provider.of<HydroSmartProvider>(context).sensorData;
-
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Kamera Scanner (Mobile Scanner / Google ML Kit)
+          // 1. Kamera Scanner
           MobileScanner(
             controller: _cameraController,
-            onDetect: (BarcodeCapture capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                final String? code = barcode.rawValue ?? barcode.displayValue;
-                if (code != null) {
-                  setState(() {
-                    isMarkerDetected = true;
-                    detectedMarkerId = code;
-                  });
-                  break;
-                }
-              }
-            },
+            onDetect: _onDetect,
           ),
 
-          // 2. Bingkai Panduan Pemindai (Viewfinder Border)
+          // 2. Bingkai Panduan Pemindai
           Center(
             child: Container(
               width: 250,
@@ -101,7 +140,7 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
             ),
           ),
 
-          // 4. Floating HUD Panel Data Sensor (Muncul saat marker terdeteksi / Simulasi Aktif)
+          // 4. HUD Data Sensor Real Time dari Firebase
           if (isMarkerDetected)
             Positioned(
               bottom: 30,
@@ -131,31 +170,24 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
                       ],
                     ),
                     const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildArMetric('TDS', '${sensor.tdsPpm.toStringAsFixed(0)} ppm'),
-                        _buildArMetric('Level Air', '${sensor.waterLevelPct.toStringAsFixed(0)}%'),
-                      ],
-                    ),
+                    _buildSensorContent(),
                   ],
                 ),
               ),
             ),
 
-          // 5. Tombol Reset / Simulasi Toggle untuk Keperluan Testing
+          // 5. Tombol Reset / Simulasi
           Positioned(
-            bottom: isMarkerDetected ? 140 : 30,
+            bottom: isMarkerDetected ? 170 : 30,
             left: 20,
             right: 20,
             child: ElevatedButton.icon(
               onPressed: () {
-                setState(() {
-                  isMarkerDetected = !isMarkerDetected;
-                  if (isMarkerDetected) {
-                    detectedMarkerId = 'HYDROS-DFT-01 (Simulasi)';
-                  }
-                });
+                if (isMarkerDetected) {
+                  _resetMarker();
+                } else {
+                  _setMarker(kSimulationId);
+                }
               },
               icon: const Icon(Icons.refresh, size: 18),
               label: Text(isMarkerDetected ? 'Reset / Scan Ulang' : 'Simulasi Deteksi Marker'),
@@ -169,6 +201,46 @@ class _ARMonitoringScreenState extends State<ARMonitoringScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSensorContent() {
+    return StreamBuilder<DatabaseEvent>(
+      stream: _sensorStream,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return Text(
+            'Error: ${snap.error}',
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          );
+        }
+        if (!snap.hasData) {
+          return const Padding(
+            padding: EdgeInsets.all(8),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final value = snap.data!.snapshot.value;
+        if (value == null || value is! Map) {
+          return Text(
+            'Data untuk "$detectedMarkerId" tidak ditemukan di Firebase',
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          );
+        }
+
+        final data = Map<String, dynamic>.from(value);
+        final tds = (data[kFieldTds] as num?)?.toDouble() ?? 0;
+        final level = (data[kFieldLevel] as num?)?.toDouble() ?? 0;
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildArMetric('TDS', '${tds.toStringAsFixed(0)} ppm'),
+            _buildArMetric('Level Air', '${level.toStringAsFixed(0)}%'),
+          ],
+        );
+      },
     );
   }
 
