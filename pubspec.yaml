@@ -40,6 +40,7 @@ dependencies:
   mobile_scanner: ^7.4.2
   firebase_core: ^3.12.1
   firebase_database: ^11.3.1
+  fl_chart: ^1.2.0 # grafik "Analitik Lingkungan Waktu Nyata"
 
 dev_dependencies:
   flutter_test:

@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../firebase_options.dart';
 import '../models/sensor_data.dart';
+import '../models/telemetry_sample.dart'; // [BARU] riwayat untuk grafik
 
 enum UserRole { penampil, operator, admin }
 
@@ -35,6 +36,12 @@ class HydroSmartProvider extends ChangeNotifier {
   double _maxWaterLevel = 80.0;
   int _currentHst = 18; // Hari Setelah Tanam
 
+  // [BARU] Riwayat telemetri untuk grafik "Analitik Lingkungan Waktu Nyata".
+  // Disimpan di provider (bukan di widget) supaya tidak hilang saat pindah tab.
+  static const int _historyMax = 60;
+  final List<TelemetrySample> _history = [];
+  DateTime? _lastSampleAt;
+
   final List<PlantNote> _plantNotes = [
     PlantNote(date: '2026-10-20', hst: 14, height: 12.5, leaves: 6),
     PlantNote(date: '2026-10-24', hst: 18, height: 16.2, leaves: 8),
@@ -47,6 +54,10 @@ class HydroSmartProvider extends ChangeNotifier {
   int get currentHst => _currentHst;
   List<PlantNote> get plantNotes => _plantNotes;
 
+  // [BARU]
+  List<TelemetrySample> get history => List.unmodifiable(_history);
+  DateTime? get lastSampleAt => _lastSampleAt;
+
   HydroSmartProvider() {
     _sensorData = SensorData(
       tdsPpm: 0,
@@ -57,6 +68,20 @@ class HydroSmartProvider extends ChangeNotifier {
       lastUpdated: DateTime.now(),
     );
     _initFirebaseListener();
+  }
+
+  // [BARU] Catat satu titik grafik dari _sensorData saat ini.
+  // Hanya dipanggil saat data sensor BARU masuk (bukan saat toggle/kontrol).
+  // Waktu yang dipakai adalah waktu terima, bukan jam ESP32, agar tahan beda jam.
+  void _recordSample() {
+    final now = DateTime.now();
+    _history.add(TelemetrySample(
+      time: now,
+      tds: _sensorData.tdsPpm,
+      waterPct: _sensorData.waterLevelPct,
+    ));
+    if (_history.length > _historyMax) _history.removeAt(0);
+    _lastSampleAt = now;
   }
 
   void setRole(UserRole role) {
@@ -165,6 +190,7 @@ class HydroSmartProvider extends ChangeNotifier {
         isOnline: true,
         lastUpdated: DateTime.now(),
       );
+      _recordSample(); // [BARU]
       notifyListeners();
     });
   }
@@ -207,6 +233,7 @@ class HydroSmartProvider extends ChangeNotifier {
               isOnline: true,
               lastUpdated: updatedTime,
             );
+            _recordSample(); // [BARU]
             notifyListeners();
           }
         }
@@ -254,4 +281,3 @@ class HydroSmartProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-
