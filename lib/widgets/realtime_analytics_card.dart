@@ -165,6 +165,83 @@ class _RealtimeAnalyticsCardState extends State<RealtimeAnalyticsCard> {
                   )
                 : LineChart(_chartData(shown)),
           ),
+          if (shown.length >= 2) ...[
+            const SizedBox(height: 12),
+            _buildSummary(shown),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Ringkasan angka dari titik yang sedang digambar di grafik.
+  Widget _buildSummary(List<TelemetrySample> shown) {
+    final isTds = _metric == _Metric.tds;
+    final color = isTds ? _tdsColor : _waterColor;
+    final values = shown.map((s) => isTds ? s.tds : s.waterPct).toList();
+
+    final last = values.last;
+    final avg = values.reduce((a, b) => a + b) / values.length;
+    final minV = values.reduce(math.min);
+    final maxV = values.reduce(math.max);
+
+    final unit = isTds ? 'ppm' : '%';
+    String fmtVal(double v) => '${v.toStringAsFixed(isTds ? 0 : 1)} $unit';
+
+    // Tren: nilai terakhir dibanding rata-rata (maks. 4) titik sebelumnya.
+    // Ambang dianggap "stabil" (silakan ubah): TDS 3 ppm, level 0,5 %.
+    final prev = values.sublist(math.max(0, values.length - 5), values.length - 1);
+    final prevAvg = prev.reduce((a, b) => a + b) / prev.length;
+    final diff = last - prevAvg;
+    final threshold = isTds ? 3.0 : 0.5;
+
+    final IconData trendIcon;
+    final String trendLabel;
+    if (diff > threshold) {
+      trendIcon = Icons.trending_up;
+      trendLabel = 'naik';
+    } else if (diff < -threshold) {
+      trendIcon = Icons.trending_down;
+      trendLabel = 'turun';
+    } else {
+      trendIcon = Icons.trending_flat;
+      trendLabel = 'stabil';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _slate100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _SummaryStat(label: 'Terakhir', value: fmtVal(last)),
+              _SummaryStat(label: 'Rata-rata', value: fmtVal(avg)),
+              _SummaryStat(label: 'Min', value: fmtVal(minV)),
+              _SummaryStat(label: 'Maks', value: fmtVal(maxV)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(trendIcon, size: 16, color: color),
+              const SizedBox(width: 4),
+              Text(
+                'Tren: $trendLabel',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+              ),
+              const Spacer(),
+              Text(
+                '${_fmt(shown.first.time)} - ${_fmt(shown.last.time)} (${shown.length} titik)',
+                style: const TextStyle(fontSize: 10, color: _slate400),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -241,6 +318,34 @@ class _RealtimeAnalyticsCardState extends State<RealtimeAnalyticsCard> {
           belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.08)),
         ),
       ],
+    );
+  }
+}
+
+class _SummaryStat extends StatelessWidget {
+  const _SummaryStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10, color: _slate400)),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _slate800),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/hydrosmart_provider.dart';
+import '../widgets/realtime_analytics_card.dart'; // [BARU]
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -120,6 +121,13 @@ class DashboardScreen extends StatelessWidget {
               _buildSensorCard('Level Air', '${sensor.waterLevelPct.toStringAsFixed(1)}%', Icons.water_drop, const Color(0xFF059669), 'Batas: ${provider.minWaterLevel.toInt()}% - ${provider.maxWaterLevel.toInt()}%'),
               _buildSensorCard('Status Pompa', sensor.pumpStatus, Icons.power, sensor.pumpStatus.contains('ON') ? const Color(0xFF059669) : Colors.grey, 'Relay ESP32'),
             ],
+          ),
+          const SizedBox(height: 20),
+
+          // [BARU] Grafik Analitik Lingkungan Waktu Nyata
+          RealtimeAnalyticsCard(
+            samples: provider.history,
+            lastSampleAt: provider.lastSampleAt,
           ),
           const SizedBox(height: 20),
 
