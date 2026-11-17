@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "582168621105",
+    "firebase_url": "https://ptc-smard-sistem-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "ptc-smard-sistem",
+    "storage_bucket": "ptc-smard-sistem.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582168621105:android:576b456f79b9d2a8f06510",
+        "android_client_info": {
+          "package_name": "com.example.hydrosmart_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn8A2oRHTLKxeoXCzpkvXqMNjkDb9a-8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
