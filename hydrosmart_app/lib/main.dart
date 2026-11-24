@@ -6,7 +6,6 @@ import 'firebase_options.dart';
 import 'providers/hydrosmart_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/ar_monitoring_screen.dart';
-import 'screens/plant_notes_screen.dart';
 import 'screens/settings_screen.dart';
 
 void
@@ -89,7 +88,6 @@ class _MainNavigationScreenState
   _screens = [
     const DashboardScreen(),
     const ARMonitoringScreen(),
-    const PlantNotesScreen(),
     const SettingsScreen(),
   ];
 
@@ -186,12 +184,6 @@ class _MainNavigationScreenState
               Icons.view_in_ar,
             ),
             label: 'AR Monitor',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.note_alt,
-            ),
-            label: 'Catatan',
           ),
           BottomNavigationBarItem(
             icon: Icon(

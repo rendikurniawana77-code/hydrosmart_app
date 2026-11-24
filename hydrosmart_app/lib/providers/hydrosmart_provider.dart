@@ -5,24 +5,9 @@ import 'package:firebase_database/firebase_database.dart';
 import '../firebase_options.dart';
 import '../models/sensor_data.dart';
 import '../models/telemetry_sample.dart'; // riwayat untuk grafik
+import '../repositories/hydro_repository.dart';
 
 enum UserRole { penampil, operator, admin }
-
-class PlantNote {
-  final String date;
-  final int hst;
-  final double height;
-  final int leaves;
-  final double? harvestWeight;
-
-  PlantNote({
-    required this.date,
-    required this.hst,
-    required this.height,
-    required this.leaves,
-    this.harvestWeight,
-  });
-}
 
 class HydroSmartProvider extends ChangeNotifier {
   UserRole _currentRole = UserRole.admin;
@@ -30,6 +15,7 @@ class HydroSmartProvider extends ChangeNotifier {
   StreamSubscription<DatabaseEvent>? _firebaseSubscription;
   StreamSubscription<DatabaseEvent>? _kontrolSubscription;
   StreamSubscription<DatabaseEvent>? _historySubscription;
+  Timer? _thresholdWriteTimer;
   bool _hasControlMode = false;
 
   double _minWaterLevel = 30.0;
@@ -46,17 +32,11 @@ class HydroSmartProvider extends ChangeNotifier {
   final List<TelemetrySample> _history = [];
   DateTime? _lastSampleAt;
 
-  final List<PlantNote> _plantNotes = [
-    PlantNote(date: '2026-10-20', hst: 14, height: 12.5, leaves: 6),
-    PlantNote(date: '2026-10-24', hst: 18, height: 16.2, leaves: 8),
-  ];
-
   UserRole get currentRole => _currentRole;
   SensorData get sensorData => _sensorData;
   double get minWaterLevel => _minWaterLevel;
   double get maxWaterLevel => _maxWaterLevel;
   int get currentHst => _currentHst;
-  List<PlantNote> get plantNotes => _plantNotes;
 
   static double? _number(dynamic value) {
     if (value is num) return value.toDouble();
@@ -115,20 +95,41 @@ class HydroSmartProvider extends ChangeNotifier {
     databaseURL: DefaultFirebaseOptions.currentPlatform.databaseURL,
   );
 
+  late final HydroRepository hydroRepository = HydroRepository(_db);
+
   void setRole(UserRole role) {
     _currentRole = role;
     notifyListeners();
   }
 
-  void setThresholds(double minLvl, double maxLvl) {
-    _minWaterLevel = minLvl;
-    _maxWaterLevel = maxLvl;
+  void setLowerWaterThreshold(double value) {
+    _minWaterLevel = value;
+    _scheduleThresholdWrite();
     notifyListeners();
   }
 
-  void addPlantNote(PlantNote note) {
-    _plantNotes.add(note);
+  void setUpperWaterThreshold(double value) {
+    _maxWaterLevel = value;
+    _scheduleThresholdWrite();
     notifyListeners();
+  }
+
+  void _scheduleThresholdWrite() {
+    _thresholdWriteTimer?.cancel();
+    _thresholdWriteTimer = Timer(const Duration(milliseconds: 250), () {
+      _saveThresholds();
+    });
+  }
+
+  Future<void> _saveThresholds() async {
+    try {
+      await _db.ref('hydrosmart/kontrol').update({
+        'batas_bawah': _minWaterLevel,
+        'batas_atas': _maxWaterLevel,
+      });
+    } catch (e) {
+      debugPrint('Error update ambang batas ke Firebase: $e');
+    }
   }
 
   // ───────────────────────── MODE ─────────────────────────
@@ -232,8 +233,7 @@ class HydroSmartProvider extends ChangeNotifier {
                   final String? mode = data['mode']?.toString().toUpperCase();
 
                   final bool? tA =
-                      _boolean(data['pompa_a']) ??
-                      _boolean(data['pompa_air']);
+                      _boolean(data['pompa_a']) ?? _boolean(data['pompa_air']);
                   final bool? tB =
                       _boolean(data['pompa_b']) ??
                       _boolean(data['pompa_nutrisi']);
@@ -261,11 +261,12 @@ class HydroSmartProvider extends ChangeNotifier {
                   _sensorData = SensorData(
                     tdsPpm: tds,
                     waterLevelPct: level,
-                    pumpStatus: (effectiveMode == 'MANUAL'
-                        ? _pumpA || _pumpB
-                        : reportedPumpsOn)
-                      ? 'ON'
-                      : 'OFF',
+                    pumpStatus:
+                        (effectiveMode == 'MANUAL'
+                            ? _pumpA || _pumpB
+                            : reportedPumpsOn)
+                        ? 'ON'
+                        : 'OFF',
                     mode: effectiveMode,
                     isOnline: true,
                     lastUpdated: updatedTime,
@@ -298,10 +299,23 @@ class HydroSmartProvider extends ChangeNotifier {
                   final bool? kB = data['pompa_b'] is bool
                       ? data['pompa_b'] as bool
                       : null;
+                  final double? lowerThreshold = _number(data['batas_bawah']);
+                  final double? upperThreshold = _number(data['batas_atas']);
 
                   final bool modeChanged =
                       kMode != null && kMode != _sensorData.mode;
+                  final bool thresholdsChanged =
+                      (lowerThreshold != null &&
+                          lowerThreshold != _minWaterLevel) ||
+                      (upperThreshold != null &&
+                          upperThreshold != _maxWaterLevel);
                   if (kMode != null) _hasControlMode = true;
+                  if (lowerThreshold != null) {
+                    _minWaterLevel = lowerThreshold;
+                  }
+                  if (upperThreshold != null) {
+                    _maxWaterLevel = upperThreshold;
+                  }
                   bool a = _pumpA;
                   bool b = _pumpB;
 
@@ -315,7 +329,7 @@ class HydroSmartProvider extends ChangeNotifier {
 
                   final bool pumpChanged = a != _pumpA || b != _pumpB;
 
-                  if (modeChanged || pumpChanged) {
+                  if (modeChanged || pumpChanged || thresholdsChanged) {
                     _pumpA = a;
                     _pumpB = b;
                     final String newMode = kMode ?? _sensorData.mode;
@@ -385,6 +399,7 @@ class HydroSmartProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _thresholdWriteTimer?.cancel();
     _firebaseSubscription?.cancel();
     _kontrolSubscription?.cancel();
     _historySubscription?.cancel();

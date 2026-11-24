@@ -7,17 +7,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 import 'package:hydrosmart_app/main.dart';
+import 'package:hydrosmart_app/providers/hydrosmart_provider.dart';
 
 void main() {
   testWidgets('app loads smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const HydroSmartApp());
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => HydroSmartProvider(),
+        child: const HydroSmartApp(),
+      ),
+    );
 
     // Verify the app renders without crashing.
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
-
-
