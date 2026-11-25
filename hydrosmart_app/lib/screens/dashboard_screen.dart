@@ -29,11 +29,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: LayoutBuilder(
         builder: (context, c) {
-          final status = _buildStatusCard(provider);
+            final status = _buildStatusCard(provider, canControl: canControl);
           final panel = _buildTopPanel(provider);
-          final controls = canControl
-              ? _buildControlPanel(provider)
-              : const SizedBox.shrink();
 
           return SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
@@ -43,7 +40,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 status,
                 const SizedBox(height: 10),
                 panel,
-                if (canControl) ...[const SizedBox(height: 10), controls],
                 const SizedBox(height: 16),
                 RealtimeAnalyticsCard(
                   samples: provider.history,
@@ -58,7 +54,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ───────────────────────── STATUS CARD (ringkas) ─────────────────────────
-  Widget _buildStatusCard(HydroSmartProvider provider) {
+  Widget _buildStatusCard(
+    HydroSmartProvider provider, {
+    required bool canControl,
+  }) {
     final sensor = provider.sensorData;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -151,6 +150,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
+          if (canControl) ...[
+            const SizedBox(height: 10),
+            _buildControlPanel(provider),
+          ],
         ],
       ),
     );
@@ -323,78 +326,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final pumpsOn = provider.pumpA || provider.pumpB;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _blue.withValues(alpha: 0.12)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Kontrol Pompa',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: _ink,
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Kontrol Pompa',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              const SizedBox(width: 8),
-              if (isManual && lowWater)
-                const Expanded(
-                  child: Text(
-                    'Air rendah, pompa dikunci',
-                    style: TextStyle(fontSize: 11, color: Colors.redAccent),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                )
-              else
-                const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _modeButton(
-                  label: 'AUTO',
-                  icon: Icons.autorenew,
-                  selected: !isManual,
-                  color: _green,
-                  enabled: true,
-                  onTap: () => provider.setMode('AUTO'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _modeButton(
-                  label: 'MANUAL',
-                  icon: Icons.touch_app,
-                  selected: isManual,
-                  color: _blue,
-                  enabled: true,
-                  onTap: () => provider.setMode('MANUAL'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 72,
-            child: _pumpButton(
-              label: 'Pompa A + B',
-              icon: Icons.power_settings_new,
-              active: pumpsOn,
-              enabled: isManual && (pumpsOn || !lowWater),
-              onTap: () => provider.togglePumpAB(),
             ),
+            const SizedBox(width: 8),
+            if (isManual && lowWater)
+              const Expanded(
+                child: Text(
+                  'Air rendah, pompa dikunci',
+                  style: TextStyle(fontSize: 11, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            else
+              const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: _modeButton(
+                label: 'AUTO',
+                icon: Icons.autorenew,
+                selected: !isManual,
+                color: _green,
+                enabled: true,
+                onTap: () => provider.setMode('AUTO'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _modeButton(
+                label: 'MANUAL',
+                icon: Icons.touch_app,
+                selected: isManual,
+                color: _blue,
+                enabled: true,
+                onTap: () => provider.setMode('MANUAL'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 44,
+          child: _pumpButton(
+            label: 'Pompa A + B',
+            icon: Icons.power_settings_new,
+            active: pumpsOn,
+            enabled: isManual && (pumpsOn || !lowWater),
+            onTap: () => provider.togglePumpAB(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -441,27 +436,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: enabled ? onTap : null,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: fg, size: 22),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: fg, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              Text(
-                active ? 'ON' : 'OFF',
-                style: TextStyle(
-                  color: fg.withValues(alpha: 0.8),
-                  fontSize: 10,
+                const Spacer(),
+                Text(
+                  active ? 'ON' : 'OFF',
+                  style: TextStyle(
+                    color: fg.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
