@@ -1,18 +1,13 @@
 /// Satu titik data pada grafik riwayat telemetri.
 class TelemetrySample {
-  const TelemetrySample({
-    required this.time,
-    required this.tds,
-    required this.waterPct,
-  });
+  const TelemetrySample({required this.time, this.tds, this.waterPct});
 
-  /// Waktu data DITERIMA aplikasi (bukan jam ESP32), supaya tidak terpengaruh
-  /// beda jam HP/ESP32 (sama seperti pendekatan di ar_monitoring_screen).
+  /// Timestamp sensor ESP32, dipakai untuk mengurutkan rekam riwayat.
   final DateTime time;
 
-  /// TDS dalam ppm.
-  final double tds;
+  /// TDS dalam ppm; null jika probe tidak valid.
+  final double? tds;
 
-  /// Level air dalam persen.
-  final double waterPct;
+  /// Level air dalam persen; null jika sensor tidak valid.
+  final double? waterPct;
 }

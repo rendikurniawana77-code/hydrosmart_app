@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../firebase_options.dart';
+import '../models/harvest_prediction.dart';
+import '../models/history_range.dart';
 import '../models/sensor_data.dart';
 import '../models/telemetry_sample.dart'; // riwayat untuk grafik
 import '../repositories/hydro_repository.dart';
+import '../repositories/telemetry_cache.dart';
 
 enum UserRole { penampil, operator, admin }
 
@@ -14,29 +17,45 @@ class HydroSmartProvider extends ChangeNotifier {
   late SensorData _sensorData;
   StreamSubscription<DatabaseEvent>? _firebaseSubscription;
   StreamSubscription<DatabaseEvent>? _kontrolSubscription;
-  StreamSubscription<DatabaseEvent>? _historySubscription;
+  StreamSubscription<DatabaseEvent>? _predictionSubscription;
+  StreamSubscription<DatabaseEvent>? _batchSubscription;
   Timer? _thresholdWriteTimer;
+  Timer? _historyRefreshTimer;
   bool _hasControlMode = false;
+  bool _historyFetchInProgress = false;
+  bool _historyRefreshPending = false;
 
   double _minWaterLevel = 30.0;
   double _maxWaterLevel = 80.0;
-  int _currentHst = 18; // Hari Setelah Tanam
+  DateTime? _plantingStartDate;
+  HarvestPrediction? _harvestPrediction;
 
   // [BARU] Status masing-masing pompa
   bool _pumpA = false;
   bool _pumpB = false;
 
-  // Riwayat telemetri untuk grafik "Analitik Lingkungan Waktu Nyata".
-  // Disimpan di provider (bukan di widget) supaya tidak hilang saat pindah tab.
-  static const int _historyMax = 60;
+  static const Duration _historyOverlap = Duration(hours: 3);
+  static const Duration _historyRetention = Duration(days: 30);
+  final TelemetryCache _telemetryCache = TelemetryCache();
+  HistoryRange _historyRange = HistoryRange.hours24;
   final List<TelemetrySample> _history = [];
-  DateTime? _lastSampleAt;
+  bool _historyLoading = false;
+  String? _historyError;
 
   UserRole get currentRole => _currentRole;
   SensorData get sensorData => _sensorData;
   double get minWaterLevel => _minWaterLevel;
   double get maxWaterLevel => _maxWaterLevel;
-  int get currentHst => _currentHst;
+  int get currentHst =>
+      _harvestPrediction?.dayIndex ??
+      (_plantingStartDate == null
+          ? 0
+          : DateTime.now().difference(_plantingStartDate!).inDays);
+  DateTime? get plantingStartDate => _plantingStartDate;
+  HarvestPrediction? get harvestPrediction => _harvestPrediction;
+  HistoryRange get historyRange => _historyRange;
+  bool get historyLoading => _historyLoading;
+  String? get historyError => _historyError;
 
   static double? _number(dynamic value) {
     if (value is num) return value.toDouble();
@@ -76,7 +95,6 @@ class HydroSmartProvider extends ChangeNotifier {
   bool get pumpB => _pumpB;
 
   List<TelemetrySample> get history => List.unmodifiable(_history);
-  DateTime? get lastSampleAt => _lastSampleAt;
 
   HydroSmartProvider() {
     _sensorData = SensorData(
@@ -88,6 +106,10 @@ class HydroSmartProvider extends ChangeNotifier {
       lastUpdated: DateTime.now(),
     );
     _initFirebaseListener();
+    _historyRefreshTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => refreshHistory(),
+    );
   }
 
   FirebaseDatabase get _db => FirebaseDatabase.instanceFor(
@@ -129,6 +151,109 @@ class HydroSmartProvider extends ChangeNotifier {
       });
     } catch (e) {
       debugPrint('Error update ambang batas ke Firebase: $e');
+    }
+  }
+
+  Future<void> loadHistoryRange(HistoryRange range) async {
+    _historyRange = range;
+    _historyError = null;
+    notifyListeners();
+    await refreshHistory();
+  }
+
+  Future<void> refreshHistory() async {
+    if (_historyFetchInProgress) {
+      _historyRefreshPending = true;
+      return;
+    }
+    _historyFetchInProgress = true;
+    _historyLoading = true;
+    notifyListeners();
+
+    final now = DateTime.now();
+    final rangeStart = now.subtract(_historyRange.duration);
+    final startSeconds = rangeStart.millisecondsSinceEpoch ~/ 1000;
+    final endSeconds = now.millisecondsSinceEpoch ~/ 1000;
+
+    try {
+      await _telemetryCache.pruneBefore(now.subtract(_historyRetention));
+      _history
+        ..clear()
+        ..addAll(await _telemetryCache.readRange(rangeStart, now));
+      notifyListeners();
+
+      final cachedOldest = await _telemetryCache.oldestTimestamp();
+      final cachedLatest = await _telemetryCache.latestTimestamp();
+      final queryStart =
+          cachedLatest == null ||
+              cachedOldest == null ||
+              cachedOldest > startSeconds
+          ? startSeconds
+          : (cachedLatest - _historyOverlap.inSeconds).clamp(
+              startSeconds,
+              endSeconds,
+            );
+
+      final snapshot = await _db
+          .ref('hydrosmart/riwayat')
+          .orderByChild('waktu')
+          .startAt(queryStart.toDouble())
+          .endAt(endSeconds.toDouble())
+          .get();
+      final records = <String, Map<dynamic, dynamic>>{};
+      final value = snapshot.value;
+      if (value is Map) {
+        for (final entry in value.entries) {
+          if (entry.value is Map) {
+            records[entry.key.toString()] = Map<dynamic, dynamic>.from(
+              entry.value as Map,
+            );
+          }
+        }
+      }
+
+      await _telemetryCache.upsert(records);
+      _history
+        ..clear()
+        ..addAll(await _telemetryCache.readRange(rangeStart, now));
+      _historyError = null;
+    } catch (error) {
+      _historyError = 'Riwayat gagal dimuat: $error';
+      debugPrint('Firebase/local telemetry history error: $error');
+      try {
+        _history
+          ..clear()
+          ..addAll(await _telemetryCache.readRange(rangeStart, now));
+      } catch (cacheError) {
+        debugPrint('Local telemetry cache error: $cacheError');
+      }
+    } finally {
+      _historyLoading = false;
+      _historyFetchInProgress = false;
+      notifyListeners();
+      if (_historyRefreshPending) {
+        _historyRefreshPending = false;
+        unawaited(refreshHistory());
+      }
+    }
+  }
+
+  Future<bool> setPlantingDate(DateTime date) async {
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    final previousDate = _plantingStartDate;
+    _plantingStartDate = selectedDate;
+    notifyListeners();
+
+    try {
+      await _db.ref('hydrosmart/batch/aktif').update({
+        'mulai': selectedDate.millisecondsSinceEpoch ~/ 1000,
+      });
+      return true;
+    } catch (e) {
+      _plantingStartDate = previousDate;
+      notifyListeners();
+      debugPrint('Error menyimpan hari pertama tanam ke Firebase: $e');
+      return false;
     }
   }
 
@@ -183,12 +308,6 @@ class HydroSmartProvider extends ChangeNotifier {
   Future<void> _setPumps(bool enabled) async {
     if (_currentRole == UserRole.penampil) return;
     if (_sensorData.mode == 'AUTO') return;
-
-    // Pengaman: jangan menyalakan pompa kalau air di bawah batas minimum
-    if (enabled && _sensorData.waterLevelPct < _minWaterLevel) {
-      debugPrint('Pompa ditolak: level air di bawah batas minimum.');
-      return;
-    }
 
     try {
       await _db.ref('hydrosmart/kontrol').update({
@@ -353,42 +472,43 @@ class HydroSmartProvider extends ChangeNotifier {
             },
           );
 
-      // 3. Riwayat historis menjadi satu-satunya sumber titik grafik.
-      _historySubscription = database
-          .ref('hydrosmart/riwayat')
+      unawaited(loadHistoryRange(_historyRange));
+
+      _predictionSubscription = database
+          .ref('hydrosmart/prediksi/terbaru')
           .onValue
           .listen(
             (event) {
               final value = event.snapshot.value;
-              final samples = <TelemetrySample>[];
               if (value is Map) {
-                for (final entry in value.values) {
-                  if (entry is! Map) continue;
-                  final time = _timestamp(entry['waktu']);
-                  final tds = _number(entry['tds']);
-                  final level = _number(entry['level']);
-                  if (time == null || tds == null || level == null) {
-                    continue;
-                  }
-                  samples.add(
-                    TelemetrySample(time: time, tds: tds, waterPct: level),
-                  );
+                _harvestPrediction = HarvestPrediction.fromMap(value);
+                if (_plantingStartDate == null) {
+                  _plantingStartDate = _harvestPrediction?.dayZero;
                 }
+                notifyListeners();
               }
-              samples.sort((a, b) => a.time.compareTo(b.time));
-              _history
-                ..clear()
-                ..addAll(
-                  samples.length > _historyMax
-                      ? samples.sublist(samples.length - _historyMax)
-                      : samples,
-                );
-              _lastSampleAt = _history.isEmpty ? null : DateTime.now();
-              notifyListeners();
             },
             onError: (error) {
               debugPrint(
-                'Firebase Database Error (hydrosmart/riwayat): $error',
+                'Firebase Database Error (hydrosmart/prediksi): $error',
+              );
+            },
+          );
+
+      _batchSubscription = database
+          .ref('hydrosmart/batch/aktif/mulai')
+          .onValue
+          .listen(
+            (event) {
+              final date = _timestamp(event.snapshot.value);
+              if (date != null) {
+                _plantingStartDate = DateTime(date.year, date.month, date.day);
+                notifyListeners();
+              }
+            },
+            onError: (error) {
+              debugPrint(
+                'Firebase Database Error (hydrosmart/batch/aktif/mulai): $error',
               );
             },
           );
@@ -402,7 +522,9 @@ class HydroSmartProvider extends ChangeNotifier {
     _thresholdWriteTimer?.cancel();
     _firebaseSubscription?.cancel();
     _kontrolSubscription?.cancel();
-    _historySubscription?.cancel();
+    _historyRefreshTimer?.cancel();
+    _predictionSubscription?.cancel();
+    _batchSubscription?.cancel();
     super.dispose();
   }
 }
